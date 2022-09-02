@@ -36,3 +36,9 @@
 build
 cmake-build-*
 release
+
+*.pdf
+*.csv
+*.txt
+*.svg
+__pycache__
