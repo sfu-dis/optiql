@@ -1,4 +1,4 @@
-# OptiQL
+# OptiQL Index Benchmarks
 
 ## Build
 ```
