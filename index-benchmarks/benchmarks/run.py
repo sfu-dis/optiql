@@ -19,8 +19,6 @@ NUM_CORES = 20
 
 class PiBenchExperiment:
     NUM_REPLICATES = 3
-    if os.getenv('TEST'):
-        NUM_REPLICATES = 1
     opTypes = ['Insert', 'Read', 'Update', 'Remove', 'Scan']
     finishTypes = ['completed', 'succeeded']
 
@@ -33,9 +31,6 @@ class PiBenchExperiment:
         kwargs['skip_verify'] = True
         kwargs['apply_hash'] = not dense
 
-        if os.getenv('TEST'):
-            #kwargs['skip_verify'] = False
-            kwargs['seconds'] = 3
         self.kwargs = kwargs
         for k, w in kwargs.items():
             self.pibench_args.append('--{}={}'.format(k, w))
@@ -60,20 +55,9 @@ class PiBenchExperiment:
 
         result = None
         if not skipped:
-            done = False
-            timeout = 10
-            if self.kwargs['threads'] < 5:
-                timeout = 60
-            elif 5 <= self.kwargs['threads'] < 10:
-                timeout = 30
-            while not done:
-                try:
-                    result = subprocess.run(
-                        commands, capture_output=True, text=True, timeout=timeout
-                    )
-                    done = True
-                except subprocess.TimeoutExpired:
-                    print(f'Timeout after {timeout} seconds, retrying...')
+            result = subprocess.run(
+                commands, capture_output=True, text=True,
+            )
             result_text = result.stdout
         else:
             with open(os.path.join(f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out'), 'r') as f:
@@ -132,14 +116,14 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
 
     experiments = []
 
-    indexes = ['btreeolc_upgrade', 'btreeolc', 'btreeolc_exp_backoff',
-               'btreeomcs_leaf', 'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-               'artolc_upgrade', 'artolc', 'artolc_exp_backoff',
-               'artomcs', 'artomcs_offset', 'artomcs_op_read']
-    labels = ['B+Tree OptLock-NB', 'B+Tree OptLock-BL', 'B+Tree OptLock-BL-BO',
-              'B+Tree OMCS-VMA', 'B+Tree OMCS', 'B+Tree OMCS+OpRead',
-              'ART OptLock-NB', 'ART OptLock-BL', 'ART OptLock-BL BO',
-              'ART OMCS-VMA', 'ART OMCS', 'ART OMCS+OpRead']
+    indexes = ['btreeolc_upgrade', 'btreeolc_exp_backoff',
+               'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
+               'artolc_upgrade', 'artolc_exp_backoff',
+               'artomcs_offset', 'artomcs_op_read']
+    labels = ['B+Tree OptLock', 'B+Tree OptLock-BO',
+              'B+Tree OptiQL--', 'B+Tree OptiQL',
+              'ART OptLock', 'ART OptLock-BO',
+              'ART OptiQL--', 'ART OptiQL']
     btree_indexes = [index for index in indexes if 'btree' in index]
     art_indexes = [index for index in indexes if 'art' in index]
     btree_labels = [label for label in labels if 'B+Tree' in label]
@@ -152,7 +136,7 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
 
     estimated_sec = prod(
         [len(indexes), len(threads), PiBenchExperiment.NUM_REPLICATES, kwargs['seconds']])
-    print('Estimated time:', estimated_sec // 60, 'minutes')
+    print('Estimated time:', estimated_sec // 60, 'minutes (excluding load time)')
 
     try:
         os.mkdir(f'{name}.raw')
