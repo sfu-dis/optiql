@@ -42,3 +42,5 @@ release
 *.txt
 *.svg
 __pycache__
+
+plots/index/data

@@ -17,6 +17,11 @@ NUM_SOCKETS = 2
 NUM_CORES = 20
 
 
+base_repo_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+data_dir = os.path.join(base_repo_dir, 'plots', 'index', 'data')
+
+
 class PiBenchExperiment:
     NUM_REPLICATES = 3
     opTypes = ['Insert', 'Read', 'Update', 'Remove', 'Scan']
@@ -49,7 +54,7 @@ class PiBenchExperiment:
         print(f'Executing ({idx}/{total}):', ' '.join(commands))
         result_text = None
         skipped = False
-        if os.path.exists(os.path.join(f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out')):
+        if os.path.exists(os.path.join(data_dir, f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out')):
             skipped = True
             print('Skipping')
 
@@ -60,7 +65,7 @@ class PiBenchExperiment:
             )
             result_text = result.stdout
         else:
-            with open(os.path.join(f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out'), 'r') as f:
+            with open(os.path.join(data_dir, f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out'), 'r') as f:
                 result_text = f.read()
 
         def parse_output(text):
@@ -88,8 +93,14 @@ class PiBenchExperiment:
         self.results.append(parse_output(result_text))
         assert(ith == len(self.results))
         if not skipped:
-            with open(os.path.join(f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out'), 'w') as f:
+            with open(os.path.join(data_dir, f'{self.name}.raw', f'{self.index}-{self.kwargs["threads"]}-{ith}.out'), 'w') as f:
                 f.writelines(result.stdout)
+
+
+gl_df_columns = ['name'] + [f'{opType}-ratio' for opType in PiBenchExperiment.opTypes] + ['key-type', 'distribution', 'skew-factor'] + ['index', 'thread', 'replicate'] + PiBenchExperiment.finishTypes + [
+    f'{opType}-{finishType}' for opType in PiBenchExperiment.opTypes for finishType in PiBenchExperiment.finishTypes]
+
+dataframe = pd.DataFrame(columns=gl_df_columns)
 
 
 def run_all_experiments(name, dense=True, *args, **kwargs):
@@ -136,10 +147,11 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
 
     estimated_sec = prod(
         [len(indexes), len(threads), PiBenchExperiment.NUM_REPLICATES, kwargs['seconds']])
-    print('Estimated time:', estimated_sec // 60, 'minutes (excluding load time)')
+    print('Estimated time:', estimated_sec //
+          60, 'minutes (excluding load time)')
 
     try:
-        os.mkdir(f'{name}.raw')
+        os.mkdir(os.path.join(data_dir, f'{name}.raw'))
     except:
         print(f'Warning: directory "{name}.raw" already exists')
 
@@ -169,63 +181,109 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
             objs.append(row)
 
     df = pd.concat(objs, ignore_index=True)
-    df.to_csv(f'{name}.csv')
+    df.to_csv(os.path.join(data_dir, f'{name}.csv'))
 
     plotFinishType = 'succeeded'
 
-    fig, ax = plt.subplots()
-    fig.tight_layout()
-    fig.set_size_inches(6, 4, forward=True)
-    for index, label in zip(indexes, labels):
-        plot_df = df[df['index'] == index]
-        g = sns.lineplot(x='thread', y=plotFinishType,
-                         data=plot_df, label=label, ax=ax,
-                         err_style='bars', marker='.', ci='sd', markersize=10)
+    # fig, ax = plt.subplots()
+    # fig.tight_layout()
+    # fig.set_size_inches(6, 4, forward=True)
+    # for index, label in zip(indexes, labels):
+    #     plot_df = df[df['index'] == index]
+    #     g = sns.lineplot(x='thread', y=plotFinishType,
+    #                      data=plot_df, label=label, ax=ax,
+    #                      err_style='bars', marker='.', ci='sd', markersize=10)
 
     def rstddev(x):
         return np.std(x, ddof=1) / np.mean(x) * 100
     df_digest = df.groupby(['index', 'thread']).agg(
         ['mean', 'min', 'max', rstddev])[plotFinishType]
     print(df_digest)
-    df_digest.to_csv(f'{name}-digest.csv')
+    df_digest.to_csv(os.path.join(data_dir, f'{name}-digest.csv'))
 
-    g.set_xticks(threads)
-    g.set(xlabel='Number of threads')
-    g.set(ylabel='Throughput')
-    ax.grid(axis='y', alpha=0.4)
-    ax.axvspan(20, 40, facecolor='0.2', alpha=0.10)
-    ax.axvspan(40, 80, facecolor='0.2', alpha=0.20)
-    plt.savefig(f'{name}.pdf', format='pdf', bbox_inches='tight')
+    # g.set_xticks(threads)
+    # g.set(xlabel='Number of threads')
+    # g.set(ylabel='Throughput')
+    # ax.grid(axis='y', alpha=0.4)
+    # ax.axvspan(20, 40, facecolor='0.2', alpha=0.10)
+    # ax.axvspan(40, 80, facecolor='0.2', alpha=0.20)
+    # plt.savefig(os.path.join(data_dir, f'{name}.pdf'), format='pdf', bbox_inches='tight')
 
-    fig = pygal.Line()
-    fig.title = f'{name}'
-    fig.x_labels = [None] + threads
+    # fig = pygal.Line()
+    # fig.title = f'{name}'
+    # fig.x_labels = [None] + threads
 
-    for latch, label in zip(indexes, labels):
-        data = [None]
-        for thread in threads:
-            mean = df_digest['mean'][latch][thread]
-            min = df_digest['min'][latch][thread]
-            max = df_digest['max'][latch][thread]
-            if df_digest['rstddev'][latch][thread] < 1.0:
-                # Ignore error bar if too small
-                data.append({'value': mean})
-            else:
-                data.append({'value': mean, 'ci': {'low': min, 'high': max}})
+    # for latch, label in zip(indexes, labels):
+    #     data = [None]
+    #     for thread in threads:
+    #         mean = df_digest['mean'][latch][thread]
+    #         min = df_digest['min'][latch][thread]
+    #         max = df_digest['max'][latch][thread]
+    #         if df_digest['rstddev'][latch][thread] < 1.0:
+    #             # Ignore error bar if too small
+    #             data.append({'value': mean})
+    #         else:
+    #             data.append({'value': mean, 'ci': {'low': min, 'high': max}})
 
-        fig.add(label, data)
+    #     fig.add(label, data)
 
-    fig.render_to_file(f'{name}.svg')
+    # fig.render_to_file(os.path.join(data_dir, f'{name}.svg'))
+
+    insert_ratio = 0.0
+    read_ratio = 1.0
+    update_ratio = 0.0
+    remove_ratio = 0.0
+    scan_ratio = 0.0
+    if 'insert_ratio' in kwargs:
+        insert_ratio = kwargs['insert_ratio']
+    if 'read_ratio' in kwargs:
+        read_ratio = kwargs['read_ratio']
+    if 'update_ratio' in kwargs:
+        update_ratio = kwargs['update_ratio']
+    if 'remove_ratio' in kwargs:
+        remove_ratio = kwargs['remove_ratio']
+    if 'scan_ratio' in kwargs:
+        scan_ratio = kwargs['scan_ratio']
+
+    df['name'] = name
+    df['Insert-ratio'] = insert_ratio
+    df['Read-ratio'] = read_ratio
+    df['Update-ratio'] = update_ratio
+    df['Remove-ratio'] = remove_ratio
+    df['Scan-ratio'] = scan_ratio
+
+    if kwargs['distribution'] == 'UNIFORM':
+        df['distribution'] = 'uniform'
+        df['skew-factor'] = 0
+    elif kwargs['distribution'] == 'SELFSIMILAR':
+        df['distribution'] = 'selfsimilar'
+        df['skew-factor'] = kwargs['skew']
+    else:
+        raise ValueError
+    if dense:
+        df['key-type'] = 'dense-int'
+    else:
+        df['key-type'] = 'sparse-int'
+
+    df.reindex(columns=gl_df_columns)
+    global dataframe
+    dataframe = dataframe.append(df, ignore_index=True)
 
 
 if __name__ == '__main__':
     NUM_RECORDS = 100_000_000
     SECONDS = 10
 
-    run_all_experiments('Update-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    try:
+        os.makedirs(data_dir)
+    except:
+        print(f'Raw data directory already exists')
+
+    # dense
     run_all_experiments('Update-only-uniform', records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
+    run_all_experiments('Update-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
     run_all_experiments('Read-only-uniform', records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=1.0, distribution='UNIFORM')
@@ -246,3 +304,17 @@ if __name__ == '__main__':
                         read_ratio=0.5, update_ratio=0.5, distribution='UNIFORM')
     run_all_experiments('Balanced-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
+
+    # sparse, skewed
+    run_all_experiments('Update-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('Read-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('Write-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('Read-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('Balanced-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
+
+    dataframe.to_csv(os.path.join(data_dir, 'All.csv'))
