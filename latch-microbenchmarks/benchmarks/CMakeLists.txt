@@ -26,52 +26,12 @@ add_executable(optlock_st_bench bench_config.cpp optlock_bench.cpp)
 target_compile_definitions(optlock_st_bench PUBLIC ST_ONLY)
 target_link_libraries(optlock_st_bench gtest glog gflags perf pthread numa)
 
-add_executable(optlock_faa_fixed_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_faa_fixed_backoff_bench PUBLIC FIXED_BACKOFF)
-target_link_libraries(optlock_faa_fixed_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(optlock_ldst_fixed_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_ldst_fixed_backoff_bench PUBLIC NO_FAA FIXED_BACKOFF)
-target_link_libraries(optlock_ldst_fixed_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(optlock_st_fixed_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_st_fixed_backoff_bench PUBLIC ST_ONLY FIXED_BACKOFF)
-target_link_libraries(optlock_st_fixed_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(optlock_faa_exp_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_faa_exp_backoff_bench PUBLIC EXP_BACKOFF)
-target_link_libraries(optlock_faa_exp_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(optlock_ldst_exp_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_ldst_exp_backoff_bench PUBLIC NO_FAA EXP_BACKOFF)
-target_link_libraries(optlock_ldst_exp_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(optlock_st_exp_backoff_bench bench_config.cpp optlock_bench.cpp)
-target_compile_definitions(optlock_st_exp_backoff_bench PUBLIC ST_ONLY EXP_BACKOFF)
-target_link_libraries(optlock_st_exp_backoff_bench gtest glog gflags perf pthread numa)
-
 add_executable(tatas_xchg_bench bench_config.cpp tatas_bench.cpp)
 target_link_libraries(tatas_xchg_bench gtest glog gflags perf pthread numa)
 
 add_executable(tatas_st_bench bench_config.cpp tatas_bench.cpp)
 target_compile_definitions(tatas_st_bench PUBLIC ST_ONLY)
 target_link_libraries(tatas_st_bench gtest glog gflags perf pthread numa)
-
-add_executable(tatas_xchg_fixed_backoff_bench bench_config.cpp tatas_bench.cpp)
-target_compile_definitions(tatas_xchg_fixed_backoff_bench PUBLIC FIXED_BACKOFF)
-target_link_libraries(tatas_xchg_fixed_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(tatas_st_fixed_backoff_bench bench_config.cpp tatas_bench.cpp)
-target_compile_definitions(tatas_st_fixed_backoff_bench PUBLIC ST_ONLY FIXED_BACKOFF)
-target_link_libraries(tatas_st_fixed_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(tatas_xchg_exp_backoff_bench bench_config.cpp tatas_bench.cpp)
-target_compile_definitions(tatas_xchg_exp_backoff_bench PUBLIC EXP_BACKOFF)
-target_link_libraries(tatas_xchg_exp_backoff_bench gtest glog gflags perf pthread numa)
-
-add_executable(tatas_st_exp_backoff_bench bench_config.cpp tatas_bench.cpp)
-target_compile_definitions(tatas_st_exp_backoff_bench PUBLIC ST_ONLY EXP_BACKOFF)
-target_link_libraries(tatas_st_exp_backoff_bench gtest glog gflags perf pthread numa)
 
 add_executable(mcs_bench bench_config.cpp mcs_bench.cpp)
 target_link_libraries(mcs_bench gtest glog gflags perf pthread numa)

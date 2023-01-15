@@ -35,18 +35,6 @@ foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
     )
 
     # add_wrapper(
-    #   NAME btreeolc_fixed_backoff${page_size_suffix}${omcs_impl_suffix}
-    #   SOURCE btreeolc_wrapper.cpp
-    #   DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED OL_CENTRALIZED_FIXED_BACKOFF BTREE_PAGE_SIZE=${page_size}
-    # )
-
-    add_wrapper(
-      NAME btreeolc_exp_backoff${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED OL_CENTRALIZED_EXP_BACKOFF BTREE_PAGE_SIZE=${page_size}
-    )
-
-    # add_wrapper(
     #   NAME btreeolc_plci${page_size_suffix}${omcs_impl_suffix}
     #   SOURCE btreeolc_wrapper.cpp
     #   DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
@@ -126,20 +114,6 @@ foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
   #   SOURCE artolc_wrapper.cpp
   #   DEFINITIONS ${omcs_impl} ART_OLC_ACQUIRE
   #   LIBRARIES artolc_acquire${omcs_impl_suffix} tbb
-  # )
-
-  add_wrapper(
-    NAME artolc_exp_backoff${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} OL_CENTRALIZED_EXP_BACKOFF OL_CENTRALIZED_EXP_BACKOFF_BASE=1600
-    LIBRARIES artolc_exp_backoff${omcs_impl_suffix} tbb
-  )
-
-  # add_wrapper(
-  #   NAME artolc_acquire_exp_backoff${omcs_impl_suffix}
-  #   SOURCE artolc_wrapper.cpp
-  #   DEFINITIONS ${omcs_impl} ART_OLC_ACQUIRE OL_CENTRALIZED_EXP_BACKOFF OL_CENTRALIZED_EXP_BACKOFF_BASE=1600
-  #   LIBRARIES artolc_acquire_exp_backoff${omcs_impl_suffix} tbb
   # )
 
   add_wrapper(

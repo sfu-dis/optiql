@@ -22,10 +22,8 @@ You might need to install several Python dependencies.
 |      Wrapper name      |                              Content                              |
 |:-----------------------|:------------------------------------------------------------------|
 |    btreeolc_upgrade    | B+-tree with centralized optimistic locks                         |
-|  btreeolc_exp_backoff  | B+-tree with centralized optimistic locks and exponential backoff |
-|  btreeomcs_leaf_offset | B+-tree with OptiQL-                                              |
+|  btreeomcs_leaf_offset | B+-tree with OptiQL-NOR                                           |
 | btreeomcs_leaf_op_read | B+-tree with OptiQL                                               |
 |     artolc_upgrade     | ART with centralized optimistic locks                             |
-|   artolc_exp_backoff   | ART with centralized optimistic locks and exponential backoff     |
-|     artomcs_offset     | ART with OptiQL-                                                  |
+|     artomcs_offset     | ART with OptiQL-NOR                                               |
 |     artomcs_op_read    | ART with OptiQL                                                   |

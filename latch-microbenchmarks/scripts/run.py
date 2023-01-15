@@ -189,8 +189,8 @@ def run_all_experiments(latches, name, *args, **kwargs):
 
     fig.render_to_file(f'{name}.svg')
 
-rw_latches = ['optlock_st', 'optlock_st_exp_backoff', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
-wo_latches = ['tatas_st', 'tatas_st_exp_backoff', 'mcs']
+rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
+wo_latches = ['tatas_st', 'mcs']
 
 if __name__ == '__main__':
     SECONDS = 10

@@ -7,8 +7,6 @@
 #include <atomic>
 #include <cassert>
 
-#include "common/delay.h"
-
 namespace omcs_impl {
 
 #ifndef CACHELINE_SIZE
@@ -189,26 +187,10 @@ class OMCSLock {
 
   uint64_t lock() {
     int cas_failure = 0;
-#if defined(EXP_BACKOFF)
-    uint64_t seed = (uintptr_t)(&cas_failure);  // FIXME(shiges): hack
-    auto next_u32 = [&]() {
-      seed = seed * 0xD04C3175 + 0x53DA9022;
-      return (seed >> 32) ^ (seed & 0xFFFFFFFF);
-    };
-    next_u32();
-    int maxDelay = kExpBackoffBase;
-#endif
     while (true) {
       bool restart = false;
       uint64_t version = try_begin_read(restart);
       if (restart) {
-#if defined(FIXED_BACKOFF)
-        DELAY(kFixedBackoffDelay);
-#elif defined(EXP_BACKOFF)
-        int delay = next_u32() % maxDelay;
-        maxDelay = std::min(maxDelay * kExpBackoffMultiplier, kExpBackoffLimit);
-        DELAY(delay);
-#endif
         continue;
       }
 
@@ -216,13 +198,6 @@ class OMCSLock {
       uint64_t locked = OMCSLock::make_locked_version(version);
       if (!tail_.compare_exchange_strong(curr, locked)) {
         cas_failure++;
-#if defined(FIXED_BACKOFF)
-        DELAY(kFixedBackoffDelay);
-#elif defined(EXP_BACKOFF)
-        int delay = next_u32() % maxDelay;
-        maxDelay = std::min(maxDelay * kExpBackoffMultiplier, kExpBackoffLimit);
-        DELAY(delay);
-#endif
         continue;
       }
       // lock acquired

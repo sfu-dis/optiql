@@ -25,16 +25,6 @@ foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
   # )
 
   add_libart(
-    NAME artolc_exp_backoff${omcs_impl_suffix}
-    DEFINITIONS ${omcs_impl} OL_CENTRALIZED_EXP_BACKOFF OL_CENTRALIZED_EXP_BACKOFF_BASE=1600
-  )
-
-  # add_libart(
-  #   NAME artolc_acquire_exp_backoff${omcs_impl_suffix}
-  #   DEFINITIONS ${omcs_impl} ART_OLC_ACQUIRE OL_CENTRALIZED_EXP_BACKOFF OL_CENTRALIZED_EXP_BACKOFF_BASE=1600
-  # )
-
-  add_libart(
     NAME artolc_upsert${omcs_impl_suffix}
     DEFINITIONS ${omcs_impl} ART_UPSERT
   )

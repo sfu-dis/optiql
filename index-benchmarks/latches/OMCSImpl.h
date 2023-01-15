@@ -13,35 +13,6 @@ namespace omcs_impl {
 #define CACHELINE_SIZE 64
 #endif
 
-// FIXME(shiges): This seems to be a reasonable way to delay instead
-// of pause instructions; the latter seems to be a bit heavier than
-// I expected. Weird; needs further investigation.
-#define DELAY(n)                       \
-  do {                                 \
-    volatile int x = 0;                \
-    for (int i = 0; i < (n); ++i) x++; \
-  } while (0)
-
-#if defined(OL_CENTRALIZED_FIXED_BACKOFF)
-#if defined(OL_CENTRALIZED_FIXED_BACKOFF_DELAY)
-constexpr int kFixedBackoffDelay = OL_CENTRALIZED_FIXED_BACKOFF_DELAY;
-#else
-constexpr int kFixedBackoffDelay = 1000;
-#endif
-#elif defined(OL_CENTRALIZED_EXP_BACKOFF)
-#if defined(OL_CENTRALIZED_EXP_BACKOFF_BASE)
-constexpr int kExpBackoffBase = OL_CENTRALIZED_EXP_BACKOFF_BASE;
-#else
-constexpr int kExpBackoffBase = 1000;
-#endif
-#if defined(OL_CENTRALIZED_EXP_BACKOFF_LIMIT)
-constexpr int kExpBackoffLimit = OL_CENTRALIZED_EXP_BACKOFF_LIMIT;
-#else
-constexpr int kExpBackoffLimit = 32000;
-#endif
-constexpr int kExpBackoffMultiplier = 2;
-#endif
-
 class OMCSLock;
 
 struct alignas(CACHELINE_SIZE * 2) OMCSQNode {
@@ -215,26 +186,10 @@ class OMCSLock {
 
   uint64_t lock() {
     int cas_failure = 0;
-#if defined(OL_CENTRALIZED_EXP_BACKOFF)
-    uint64_t seed = (uintptr_t)(&cas_failure);  // FIXME(shiges): hack
-    auto next_u32 = [&]() {
-      seed = seed * 0xD04C3175 + 0x53DA9022;
-      return (seed >> 32) ^ (seed & 0xFFFFFFFF);
-    };
-    next_u32();
-    int maxDelay = kExpBackoffBase;
-#endif
     while (true) {
       bool restart = false;
       uint64_t version = try_begin_read(restart);
       if (restart) {
-#if defined(OL_CENTRALIZED_FIXED_BACKOFF)
-        DELAY(kFixedBackoffDelay);
-#elif defined(OL_CENTRALIZED_EXP_BACKOFF)
-        int delay = next_u32() % maxDelay;
-        maxDelay = std::min(maxDelay * kExpBackoffMultiplier, kExpBackoffLimit);
-        DELAY(delay);
-#endif
         continue;
       }
 
@@ -243,13 +198,6 @@ class OMCSLock {
       if (!tail_.compare_exchange_strong(curr, locked)) {
         // XXX(shiges): This seem to hinder performance; maybe tune params?
         // cas_failure++;
-#if defined(OL_CENTRALIZED_FIXED_BACKOFF)
-        DELAY(kFixedBackoffDelay);
-#elif defined(OL_CENTRALIZED_EXP_BACKOFF)
-        int delay = next_u32() % maxDelay;
-        maxDelay = std::min(maxDelay * kExpBackoffMultiplier, kExpBackoffLimit);
-        DELAY(delay);
-#endif
         continue;
       }
       // lock acquired
@@ -438,7 +386,5 @@ class OMCSLock {
     return OMCSLock::has_locked_bit(version);
   }
 };
-
-#undef DELAY
 
 }  // namespace omcs_impl
