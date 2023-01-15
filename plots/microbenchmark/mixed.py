@@ -92,7 +92,7 @@ def plot(base_dir):
 
     lines, _ = axs[0, 0].get_legend_handles_labels()
     labels = [printed_latches[latch] for latch in rw_latches]
-    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='upper right', bbox_to_anchor=(1.015, 1.06), ncol=len(rw_latches), frameon=False)
+    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='upper right', bbox_to_anchor=(0.9, 1.06), ncol=len(rw_latches), frameon=False)
     
     fig.text(-0.04, 0.45, "Throughput (million ops/s)", va='center', rotation='vertical')
 

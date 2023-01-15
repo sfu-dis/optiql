@@ -73,7 +73,7 @@ def plot():
 
 
     lines, labels = axs[0].get_legend_handles_labels()
-    fig.legend(lines, labels, loc='upper right', bbox_to_anchor=(0.95, 1.2), ncol=7, frameon=False)
+    fig.legend(lines, labels, loc='upper right', bbox_to_anchor=(0.9, 1.2), ncol=7, frameon=False)
 
     axs[0].set_ylabel("Throughput (Mops/s)")
 

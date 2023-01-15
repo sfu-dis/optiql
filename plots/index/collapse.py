@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from cgitb import text
-from importlib.metadata import distribution
 from math import prod
 import os
 import subprocess
@@ -153,7 +152,7 @@ def run_all_experiments(name, *args, **kwargs):
 def draw(fig, ax, name, df, legend=False):
     # fig, ax = plt.subplots()
     markers = ['v', 'o']
-    palette = sns.color_palette()[0:4:3]
+    palette = sns.color_palette()[0:3:2]
     for i, (index, label) in enumerate(zip(indexes, labels)):
         plot_df = df[df['index'] == index]
         # g = sns.lineplot(x='thread', y=plotFinishType, color=palette[i],

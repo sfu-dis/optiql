@@ -30,19 +30,19 @@ except:
     print(f'Raw data directory already exists')
 
 
-indexes = ['btreeolc_upgrade', 'btreeolc_exp_backoff',
+indexes = ['btreeolc_upgrade',
            'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-           'artolc_upgrade', 'artolc_exp_backoff',
+           'artolc_upgrade',
            'artomcs_offset', 'artomcs_op_read']
-labels = ['B+Tree OptLock-NB', 'B+Tree OptLock-BL-BO',
+labels = ['B+Tree OptLock-NB',
           'B+Tree OMCS', 'B+Tree OMCS+OpRead',
-          'ART OptLock-NB', 'ART OptLock-BL BO',
+          'ART OptLock-NB',
           'ART OMCS', 'ART OMCS+OpRead']
 btree_indexes = [index for index in indexes if 'btree' in index]
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptLock-BO', 'OptiQL--', 'OptiQL']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
@@ -289,7 +289,7 @@ if __name__ == '__main__':
         else:
             dataframe = dataframe_sparse
 
-        markers = ['v', '^', 's', 'o', '*', 'd', '>', 'P', 'd', 'h']
+        markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
 
         indexes = [btree_indexes, art_indexes]
         labels = [btree_labels, art_labels]
@@ -357,7 +357,7 @@ if __name__ == '__main__':
 
         lines, _ = axs[0, 0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='upper right', bbox_to_anchor=(
-            0.75, 1.25), ncol=len(latch_labels), frameon=False)
+            0.72, 1.25), ncol=len(latch_labels), frameon=False)
 
         fig.text(0.01, 0.5, "Latency (µs)", va='center', rotation='vertical')
 

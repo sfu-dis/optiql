@@ -127,13 +127,13 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
 
     experiments = []
 
-    indexes = ['btreeolc_upgrade', 'btreeolc_exp_backoff',
+    indexes = ['btreeolc_upgrade',
                'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-               'artolc_upgrade', 'artolc_exp_backoff',
+               'artolc_upgrade',
                'artomcs_offset', 'artomcs_op_read']
-    labels = ['B+Tree OptLock', 'B+Tree OptLock-BO',
+    labels = ['B+Tree OptLock',
               'B+Tree OptiQL--', 'B+Tree OptiQL',
-              'ART OptLock', 'ART OptLock-BO',
+              'ART OptLock',
               'ART OptiQL--', 'ART OptiQL']
     btree_indexes = [index for index in indexes if 'btree' in index]
     art_indexes = [index for index in indexes if 'art' in index]
