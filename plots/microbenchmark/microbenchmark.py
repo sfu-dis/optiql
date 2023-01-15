@@ -9,13 +9,12 @@ printed_ratios = {
     }
 
 rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
-wo_latches = ['tatas_st', 'tatas_st_exp_backoff', 'mcs']
+wo_latches = ['tatas_st', 'mcs']
 printed_latches = {
     'optlock_st': 'OptLock',
     'omcs_offset': 'OptiQL-NOR',
     'omcs_offset_op_read_numa_qnode': 'OptiQL',
     'tatas_st': 'TTS',
-    'tatas_st_exp_backoff': 'TTS-BO',
     'mcs': 'MCS',
     }
 
