@@ -45,12 +45,19 @@ class LatchExperiment:
         commands = [*self.numactl, self.bench_bin, *self.args]
 
         print(f'Executing ({idx}/{total}):', ' '.join(commands))
-        result = subprocess.run(
-            commands, capture_output=True, text=True
-        )
-
-        with open("{}-{}-{}-{}-stdout.txt".format(self.name, self.latch, self.threads, replica), "w") as f:
-            f.write(result.stdout)
+        result_text = None
+        fname = "{}-{}-{}-{}-stdout.txt".format(self.name, self.latch, self.threads, replica)
+        if os.path.exists(fname):
+            print('Skipping')
+            with open(fname) as f:
+                result_text = f.read()
+        else:
+            result = subprocess.run(
+                commands, capture_output=True, text=True
+            )
+            with open(fname, "w") as f:
+                f.write(result.stdout)
+            result_text = result.stdout
 
         def parse_output(text):
             pattern = r'(.+),(.+),(.+),(.+),(.+)'
@@ -83,7 +90,7 @@ class LatchExperiment:
             print('Warning: results not found')
             return (np.nan, np.nan, np.nan, np.nan)
 
-        self.results.append(parse_output(result.stdout))
+        self.results.append(parse_output(result_text))
 
 
 def run_all_experiments(latches, name, *args, **kwargs):
