@@ -138,6 +138,24 @@ struct BTreeLeaf : public NodeBase {
     return false;
   }
 
+#if defined(OMCS_OP_READ_NEW_API)
+  bool update(Key k, Payload p, bool opread) {
+    assert(count <= maxEntries);
+    if (count) {
+      unsigned pos = lowerBound(k);
+      if ((pos < count) && (data[pos].first == k)) {
+        // Update
+        if (opread) {
+          writeLockTurnOffOpRead();
+        }
+        data[pos].second = p;
+        return true;
+      }
+    }
+    return false;
+  }
+#endif
+
   BTreeLeaf *split(Key &sep) {
     BTreeLeaf *newLeaf = new BTreeLeaf();
     newLeaf->count = count - (count / 2);

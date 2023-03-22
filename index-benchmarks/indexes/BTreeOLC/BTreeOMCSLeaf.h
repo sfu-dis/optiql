@@ -368,6 +368,66 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     return true;
   }
 
+#if defined(OMCS_OP_READ_NEW_API)
+  bool traverseToLeafExNewAPI(Key k, OMCSLock::Context &q, NodeBase *&node, uint64_t &versionNode, bool &opread) {
+    int restartCount = 0;
+  restart:
+    if (restartCount++) yield(restartCount);
+    bool needRestart = false;
+
+    versionNode = OMCSLock::kInvalidVersion;
+    node = root;
+    if (node->getType() == PageType::BTreeLeaf) {
+      // The root node is a leaf node.
+      opread = node->writeLockBegin(&q);
+      if (node != root) {
+        if (opread) {
+          node->writeLockTurnOffOpRead();
+        }
+        node->writeUnlock(&q);
+        goto restart;
+      }
+      return true;
+    }
+    versionNode = node->readLockOrRestart(needRestart);
+    if (needRestart || node != root) goto restart;
+
+    while (node->getType() == PageType::BTreeInner) {
+      auto inner = static_cast<BTreeInner<Key> *>(node);
+
+      NodeBase *next = inner->children[inner->lowerBound(k)];
+      node->checkOrRestart(versionNode, needRestart);
+      if (needRestart) goto restart;
+
+      uint64_t versionNext = OMCSLock::kInvalidVersion;
+      if (next->getType() == PageType::BTreeInner) {
+        // [next] is an inner node
+        versionNext = next->readLockOrRestart(needRestart);
+        if (needRestart) goto restart;
+      } else {
+        // [next] is a leaf node, just take exclusive latch
+        opread = next->writeLockBegin(&q);
+      }
+      node->readUnlockOrRestart(versionNode, needRestart);
+      if (needRestart) {
+        if (next->getType() == PageType::BTreeLeaf) {
+          if (opread) {
+            next->writeLockTurnOffOpRead();
+          }
+          next->writeUnlock(&q);
+        }
+        goto restart;
+      }
+
+      node = next;
+      versionNode = versionNext;
+    }
+
+    // We now have exclusive latch on [node]
+    return true;
+  }
+#endif
+
   bool insert(Key k, Value v) {
 #if not defined(PESSIMISTIC_LOCK_COUPLING_INSERT)
     return insertOptimistically(k, v);
@@ -406,6 +466,7 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     return ok;
   }
 
+#if not defined(OMCS_OP_READ_NEW_API)
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
     uint64_t versionNode = OMCSLock::kInvalidVersion;
@@ -416,6 +477,19 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     node->writeUnlock(&q);
     return ok;
   }
+#else
+  bool update(Key k, Value v) {
+    NodeBase *node = nullptr;
+    uint64_t versionNode = OMCSLock::kInvalidVersion;
+    bool opread = false;
+    DEFINE_CONTEXT(q, 0);
+    traverseToLeafExNewAPI(k, q, node, versionNode, opread);
+    auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
+    bool ok = leaf->update(k, v, opread);
+    node->writeUnlock(&q);
+    return ok;
+  }
+#endif
 };
 
 }  // namespace btreeolc

@@ -84,6 +84,13 @@ foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
       LIBRARIES numa
     )
 
+    add_wrapper(
+      NAME btreeomcs_leaf_op_read_new_api${page_size_suffix}${omcs_impl_suffix}
+      SOURCE btreeolc_wrapper.cpp
+      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API BTREE_PAGE_SIZE=${page_size}
+      LIBRARIES numa
+    )
+
     # add_wrapper(
     #   NAME btreeomcs_leaf_plci${page_size_suffix}${omcs_impl_suffix}
     #   SOURCE btreeolc_wrapper.cpp

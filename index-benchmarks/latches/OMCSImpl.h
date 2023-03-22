@@ -235,6 +235,54 @@ class OMCSLock {
 #endif
   }
 
+  inline bool lock_begin(OMCSQNode *qnode) {
+    assert(qnode != nullptr);
+
+#ifndef NDEBUG
+    qnode->set_omcs(this);
+#endif
+
+    qnode->set_next(nullptr);
+    qnode->set_version(OMCSLock::kInvalidVersion);
+    uint64_t self = OMCSLock::make_qnode_ptr(qnode);
+    uint64_t version = tail_.exchange(self);
+
+    if (OMCSLock::is_version(version)) {
+#ifdef OMCS_OFFSET
+      assert((version & kQNodeIdMask) == 0);
+      // Doesn't matter if opread is enabled, we need to apply the mask
+      uint64_t v0 = version & kVersionMask;
+#else
+#ifdef OMCS_OP_READ
+      uint64_t v0 = version & ~kConsistentBit;
+#else
+      uint64_t v0 = version;
+#endif  // OMCS_OP_READ
+#endif  // OMCS_OFFSET
+      uint64_t v1 = v0 + kVersionStride;
+      qnode->set_version(v1);
+      return false;
+    }
+
+    OMCSQNode *pred = OMCSLock::get_qnode_ptr(version);
+    pred->set_next(qnode);
+
+    while (qnode->get_version() == OMCSLock::kInvalidVersion) {
+    }
+    return true;
+  }
+
+  inline void lock_turn_off_opread() {
+#ifdef OMCS_OP_READ
+#ifdef OMCS_OFFSET
+    // Remove the consistent bit + version (actually not necessary to remove version, but just to be clear)
+    tail_.fetch_and(~(kConsistentBit | kVersionMask));
+#else
+    tail_.fetch_and(~kConsistentBit);
+#endif
+#endif
+  }
+
   inline void lock(OMCSQNode *qnode) {
     assert(qnode != nullptr);
 

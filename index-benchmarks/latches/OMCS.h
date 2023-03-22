@@ -36,6 +36,10 @@ struct OMCSLock {
 
   void writeUnlock(uint64_t version) { return lock.unlock(version); }
 
+  bool writeLockBegin(Context *q) { return lock.lock_begin(q); }
+
+  void writeLockTurnOffOpRead() { lock.lock_turn_off_opread(); }
+
   void writeLock(Context *q) { lock.lock(q); }
 
   void upgradeToWriteLockOrRestart(uint64_t &version, Context *q, bool &needRestart) {

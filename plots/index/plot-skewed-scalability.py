@@ -21,17 +21,19 @@ NUM_CORES = 20
 
 indexes = ['btreeolc_upgrade',
            'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
+           'btreeomcs_leaf_op_read_new_api',
            'artolc_upgrade',
            'artomcs_offset', 'artomcs_op_read']
 labels = ['B+Tree OptLock-NB',
           'B+Tree OMCS', 'B+Tree OMCS+OpRead',
+          'B+Tree OptiQL NewAPI',
           'ART OptLock-NB',
           'ART OMCS', 'ART OMCS+OpRead']
 btree_indexes = [index for index in indexes if 'btree' in index]
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'OptiQL-NA']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
