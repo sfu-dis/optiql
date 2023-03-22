@@ -5,6 +5,8 @@
 
 #if defined(OMCS_LOCK)
 #include "OMCSImpl.h"
+#elif defined(STDRW_LOCK)
+#include "STDRW.h"
 #endif
 
 struct OMCSLock {
@@ -13,11 +15,18 @@ struct OMCSLock {
   using Context = omcs_impl::OMCSQNode;
   static constexpr uint64_t kInvalidVersion = omcs_impl::OMCSLock::kInvalidVersion;
   static constexpr const char *name = "OMCS Lock";
+#elif defined(STDRW_LOCK)
+  using Lock = std_lock::STDRWLock;
+  using Context = uint64_t;
+  static constexpr const char *name = "STD RW Lock";
 #else
 #error "OMCS implementation is not defined."
 #endif
 
   Lock lock;
+
+#if defined(OMCS_LOCK)
+  // Optimistic lock API
 
   bool isLocked() const { return lock.is_locked(); }
 
@@ -63,8 +72,42 @@ struct OMCSLock {
   void readUnlockOrRestart(uint64_t startRead, bool &needRestart) const {
     needRestart = !lock.validate_read(startRead);
   }
+
+#elif defined(RWLOCK)
+  // Readers-writer lock API
+
+  void writeLock() { lock.lock(); }
+
+  void writeUnlock() { lock.unlock(); }
+
+  void readLock() { lock.read_lock(); }
+
+  void readUnlock() { lock.read_unlock(); }
+
+  void writeLock(Context *q) { lock.lock(q); }
+
+  void writeUnlock(Context *q) { lock.unlock(q); }
+
+  void readLock(Context *q) { lock.read_lock(q); }
+
+  void readUnlock(Context *q) { lock.read_unlock(q); }
+
+  // Dummy APIs
+  uint64_t readLockOrRestart(bool &needRestart) const { LOG(FATAL) << "Not supported"; }
+
+  void checkOrRestart(uint64_t startRead, bool &needRestart) const {
+    LOG(FATAL) << "Not supported";
+  }
+
+  void readUnlockOrRestart(uint64_t startRead, bool &needRestart) const {
+    LOG(FATAL) << "Not supported";
+  }
+
+#endif
 };
 
 #if defined(OMCS_LOCK)
 static_assert(sizeof(OMCSLock) == 8, "sizeof OMCSLock is not 8-byte");
+#elif defined(STDRW_LOCK)
+static_assert(sizeof(OMCSLock) == 56, "sizeof OMCSLock is not 56-byte");
 #endif

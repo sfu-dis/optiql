@@ -25,6 +25,7 @@ indexes = ['btreeolc_upgrade',
            'btreeomcs_leaf_op_read_new_api_baseline',
            'btreeomcs_leaf_op_read_callback',
            'btreeomcs_leaf_op_read_callback_baseline',
+           'btreelc_stdrw',
            'artolc_upgrade',
            'artomcs_offset', 'artomcs_op_read']
 labels = ['B+Tree OptLock-NB',
@@ -33,6 +34,7 @@ labels = ['B+Tree OptLock-NB',
           'B+Tree OptiQL NewAPI Baseline',
           'B+Tree OptiQL Callback',
           'B+Tree OptiQL Callback Baseline',
+          'B+Tree STDRW',
           'ART OptLock-NB',
           'ART OMCS', 'ART OMCS+OpRead']
 btree_indexes = [index for index in indexes if 'btree' in index]

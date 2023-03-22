@@ -26,159 +26,161 @@ list(APPEND page_sizes 256 512 1024 2048 4096 8192 16384)
 list(APPEND page_size_suffixes "" "_512" "_1K" "_2K" "_4K" "_8K" "_16K")
 
 # B+ tree
-foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
-  foreach(page_size page_size_suffix IN ZIP_LISTS page_sizes page_size_suffixes)
-    add_wrapper(
-      NAME btreeolc${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED BTREE_PAGE_SIZE=${page_size}
-    )
+foreach(page_size page_size_suffix IN ZIP_LISTS page_sizes page_size_suffixes)
+  add_wrapper(
+    NAME btreeolc${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OL_CENTRALIZED BTREE_PAGE_SIZE=${page_size}
+  )
 
-    # add_wrapper(
-    #   NAME btreeolc_plci${page_size_suffix}${omcs_impl_suffix}
-    #   SOURCE btreeolc_wrapper.cpp
-    #   DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
-    # )
+  # add_wrapper(
+  #   NAME btreeolc_plci${page_size_suffix}
+  #   SOURCE btreeolc_wrapper.cpp
+  #   DEFINITIONS OMCS_LOCK BTREE_OL_CENTRALIZED BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
+  # )
 
-    add_wrapper(
-      NAME btreeolc_nosync${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OL_CENTRALIZED BTREE_NO_SYNC BTREE_PAGE_SIZE=${page_size}
-    )
+  add_wrapper(
+    NAME btreeolc_nosync${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OL_CENTRALIZED BTREE_NO_SYNC BTREE_PAGE_SIZE=${page_size}
+  )
 
-    add_wrapper(
-      NAME btreeolc_upgrade${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OLC_UPGRADE BTREE_PAGE_SIZE=${page_size}
-    )
+  add_wrapper(
+    NAME btreeolc_upgrade${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OLC_UPGRADE BTREE_PAGE_SIZE=${page_size}
+  )
 
-    # add_wrapper(
-    #   NAME btreeomcs${page_size_suffix}${omcs_impl_suffix}
-    #   SOURCE btreeolc_wrapper.cpp
-    #   DEFINITIONS ${omcs_impl} BTREE_OMCS_ALL BTREE_PAGE_SIZE=${page_size}
-    # )
+  # add_wrapper(
+  #   NAME btreeomcs${page_size_suffix}
+  #   SOURCE btreeolc_wrapper.cpp
+  #   DEFINITIONS OMCS_LOCK BTREE_OMCS_ALL BTREE_PAGE_SIZE=${page_size}
+  # )
 
-    # add_wrapper(
-    #   NAME btreeomcs_plci${page_size_suffix}${omcs_impl_suffix}
-    #   SOURCE btreeolc_wrapper.cpp
-    #   DEFINITIONS ${omcs_impl} BTREE_OMCS_ALL BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
-    # )
+  # add_wrapper(
+  #   NAME btreeomcs_plci${page_size_suffix}
+  #   SOURCE btreeolc_wrapper.cpp
+  #   DEFINITIONS OMCS_LOCK BTREE_OMCS_ALL BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
+  # )
 
-    add_wrapper(
-      NAME btreeomcs_leaf${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY BTREE_PAGE_SIZE=${page_size}
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY BTREE_PAGE_SIZE=${page_size}
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_offset${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_offset${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_op_read${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_op_read_new_api${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read_new_api${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_op_read_new_api_baseline${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API OMCS_OP_READ_NEW_API_BASELINE BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read_new_api_baseline${page_size_suffix}${omcs_impl_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API OMCS_OP_READ_NEW_API_BASELINE BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_op_read_callback${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API_CALLBACK BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read_callback${page_size_suffix}${omcs_impl_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API_CALLBACK BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    add_wrapper(
-      NAME btreeomcs_leaf_op_read_callback_baseline${page_size_suffix}${omcs_impl_suffix}
-      SOURCE btreeolc_wrapper.cpp
-      DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API_CALLBACK OMCS_OP_READ_NEW_API_CALLBACK_BASELINE BTREE_PAGE_SIZE=${page_size}
-      LIBRARIES numa
-    )
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read_callback_baseline${page_size_suffix}${omcs_impl_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE OMCS_OP_READ_NEW_API_CALLBACK OMCS_OP_READ_NEW_API_CALLBACK_BASELINE BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
 
-    # add_wrapper(
-    #   NAME btreeomcs_leaf_plci${page_size_suffix}${omcs_impl_suffix}
-    #   SOURCE btreeolc_wrapper.cpp
-    #   DEFINITIONS ${omcs_impl} BTREE_OMCS_LEAF_ONLY BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
-    # )
+  # add_wrapper(
+  #   NAME btreeomcs_leaf_plci${page_size_suffix}
+  #   SOURCE btreeolc_wrapper.cpp
+  #   DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY BTREE_PAGE_SIZE=${page_size} PESSIMISTIC_LOCK_COUPLING_INSERT
+  # )
 
-  endforeach()
+  add_wrapper(
+    NAME btreelc_stdrw${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS RWLOCK STDRW_LOCK BTREE_RWLOCK BTREE_PAGE_SIZE=${page_size}
+  )
+
 endforeach()
 
 # ART
-foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
-  add_wrapper(
-    NAME artolc${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl}
-    LIBRARIES artolc${omcs_impl_suffix} tbb
-  )
+add_wrapper(
+  NAME artolc
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK
+  LIBRARIES artolc tbb
+)
 
-  add_wrapper(
-    NAME artolc_upgrade${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} ART_OLC_UPGRADE
-    LIBRARIES artolc_upgrade${omcs_impl_suffix} tbb
-  )
+add_wrapper(
+  NAME artolc_upgrade
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK ART_OLC_UPGRADE
+  LIBRARIES artolc_upgrade tbb
+)
 
-  # add_wrapper(
-  #   NAME artolc_acquire${omcs_impl_suffix}
-  #   SOURCE artolc_wrapper.cpp
-  #   DEFINITIONS ${omcs_impl} ART_OLC_ACQUIRE
-  #   LIBRARIES artolc_acquire${omcs_impl_suffix} tbb
-  # )
+# add_wrapper(
+#   NAME artolc_acquire
+#   SOURCE artolc_wrapper.cpp
+#   DEFINITIONS OMCS_LOCK ART_OLC_ACQUIRE
+#   LIBRARIES artolc_acquire tbb
+# )
 
-  add_wrapper(
-    NAME artolc_upsert${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} ART_UPSERT
-    LIBRARIES artolc_upsert${omcs_impl_suffix} tbb
-  )
+add_wrapper(
+  NAME artolc_upsert
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK ART_UPSERT
+  LIBRARIES artolc_upsert tbb
+)
 
-  add_wrapper(
-    NAME artomcs${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} IS_CONTEXTFUL
-    LIBRARIES artomcs${omcs_impl_suffix} tbb
-  )
+add_wrapper(
+  NAME artomcs
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL
+  LIBRARIES artomcs tbb
+)
 
-  add_wrapper(
-    NAME artomcs_offset${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} IS_CONTEXTFUL OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
-    LIBRARIES artomcs_offset${omcs_impl_suffix} tbb numa
-  )
+add_wrapper(
+  NAME artomcs_offset
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+  LIBRARIES artomcs_offset tbb numa
+)
 
-  add_wrapper(
-    NAME artomcs_op_read${omcs_impl_suffix}
-    SOURCE artolc_wrapper.cpp
-    DEFINITIONS ${omcs_impl} IS_CONTEXTFUL OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
-    LIBRARIES artomcs_op_read${omcs_impl_suffix} tbb numa
-  )
+add_wrapper(
+  NAME artomcs_op_read
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+  LIBRARIES artomcs_op_read tbb numa
+)
 
-  # add_wrapper(
-  #   NAME artomcs_acquire${omcs_impl_suffix}
-  #   SOURCE artolc_wrapper.cpp
-  #   DEFINITIONS ${omcs_impl} ART_OLC_ACQUIRE IS_CONTEXTFUL
-  #   LIBRARIES artomcs_acquire${omcs_impl_suffix} tbb
-  # )
-endforeach()
+# add_wrapper(
+#   NAME artomcs_acquire
+#   SOURCE artolc_wrapper.cpp
+#   DEFINITIONS OMCS_LOCK ART_OLC_ACQUIRE IS_CONTEXTFUL
+#   LIBRARIES artomcs_acquire tbb
+# )
 
 add_executable(wrapper_tests wrapper_tests.cpp)
 target_link_libraries(wrapper_tests gtest btreeolc_wrapper pthread)

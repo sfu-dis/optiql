@@ -15,6 +15,9 @@ using BTree = btreeolc::BTreeOMCSLeaf<uint64_t, uint64_t>;
 #elif defined(BTREE_OMCS_ALL)
 #include "indexes/BTreeOLC/BTreeOMCS.h"
 using BTree = btreeolc::BTreeOMCS<uint64_t, uint64_t>;
+#elif defined(BTREE_RWLOCK)
+#include "indexes/BTreeOLC/BTreeLC.h"
+using BTree = btreeolc::BTreeLC<uint64_t, uint64_t>;
 #else
 #error "BTree synchronization implementation is not defined."
 #endif
