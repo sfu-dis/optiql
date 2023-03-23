@@ -28,6 +28,8 @@ indexes = ['btreeolc_upgrade',
            'btreelc_stdrw',
            'btreelc_mcsrw_cwp',
            'btreelc_mcsrw_crp',
+           'btreelc_crw_cwp',
+           'btreelc_crw_crp',
            'artolc_upgrade',
            'artomcs_offset', 'artomcs_op_read']
 labels = ['B+Tree OptLock-NB',
@@ -39,6 +41,8 @@ labels = ['B+Tree OptLock-NB',
           'B+Tree STDRW',
           'B+Tree MCSRW CWP',
           'B+Tree MCSRW CRP',
+          'B+Tree CRW CWP',
+          'B+Tree CRW CRP',
           'ART OptLock-NB',
           'ART OMCS', 'ART OMCS+OpRead']
 btree_indexes = [index for index in indexes if 'btree' in index]

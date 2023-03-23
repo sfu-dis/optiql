@@ -233,6 +233,13 @@ class MCSRWLock {
 #endif
   }
 
+#if defined(MCSRW_LOCK_CENTRALIZED)
+  inline void lock(MCSRWQNode *qnode) { return lock(); }
+  inline void unlock(MCSRWQNode *qnode) { return unlock(); }
+  inline void read_lock(MCSRWQNode *qnode) { return read_lock(); }
+  inline void read_unlock(MCSRWQNode *qnode) { return read_unlock(); }
+
+#else
   inline void lock(MCSRWQNode *qnode) {
     assert(qnode != nullptr);
 
@@ -373,6 +380,7 @@ class MCSRWLock {
       next_writer->set_blocked(kUnblocked);
     }
   }
+#endif
 
 #undef tail_
 #undef next_writer_
