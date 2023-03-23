@@ -12,7 +12,7 @@
 // This implementation uses OMCS only on leaf nodes.
 
 #if defined(OMCS_OFFSET)
-#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *omcs_impl::get_qnode(i)
+#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *offset::get_qnode(i)
 #else
 #define DEFINE_CONTEXT(q, i) OMCSLock::Context q
 #endif

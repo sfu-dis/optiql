@@ -26,6 +26,8 @@ indexes = ['btreeolc_upgrade',
            'btreeomcs_leaf_op_read_callback',
            'btreeomcs_leaf_op_read_callback_baseline',
            'btreelc_stdrw',
+           'btreelc_mcsrw_cwp',
+           'btreelc_mcsrw_crp',
            'artolc_upgrade',
            'artomcs_offset', 'artomcs_op_read']
 labels = ['B+Tree OptLock-NB',
@@ -35,13 +37,16 @@ labels = ['B+Tree OptLock-NB',
           'B+Tree OptiQL Callback',
           'B+Tree OptiQL Callback Baseline',
           'B+Tree STDRW',
+          'B+Tree MCSRW CWP',
+          'B+Tree MCSRW CRP',
           'ART OptLock-NB',
           'ART OMCS', 'ART OMCS+OpRead']
 btree_indexes = [index for index in indexes if 'btree' in index]
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'OptiQL-NA', 'OptiQL-NA-Baseline']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'New API', 'New API-Baseline',
+                'Callback', 'Callback-Baseline', 'std', 'MCS-RW-CWP', 'MCS-RW-CRP']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]

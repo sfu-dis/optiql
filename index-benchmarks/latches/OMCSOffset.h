@@ -4,12 +4,39 @@
 
 #include <iostream>
 
+#if defined(OMCS_LOCK)
 #include "OMCSImpl.h"
-
-namespace omcs_impl {
+#elif defined(MCSRW_LOCK)
+#include "MCSRW.h"
+#endif
 
 #ifdef OMCS_OFFSET
+#if defined(OMCS_LOCK)
+namespace offset {
+using Lock = omcs_impl::OMCSLock;
+using QNode = omcs_impl::OMCSQNode;
+}  // namespace offset
+namespace omcs_impl {
 inline OMCSQNode *base_qnode = nullptr;
+}  // namespace omcs_impl
+#elif defined(MCSRW_LOCK)
+namespace offset {
+using Lock = mcsrw::MCSRWLock;
+using QNode = mcsrw::MCSRWQNode;
+}  // namespace offset
+namespace mcsrw {
+inline MCSRWQNode *base_qnode = nullptr;
+}  // namespace mcsrw
+#endif
+#endif
+
+namespace offset {
+#ifdef OMCS_OFFSET
+#if defined(OMCS_LOCK)
+using omcs_impl::base_qnode;
+#elif defined(MCSRW_LOCK)
+using mcsrw::base_qnode;
+#endif
 #ifdef OMCS_OFFSET_NUMA_QNODE
 #define PAGE_SIZE 4096
 struct socket_queue_node_index {
@@ -25,14 +52,14 @@ inline std::atomic<uint64_t> next_node(0);
 inline void init_qnodes() {
 #ifdef OMCS_OFFSET
 #ifdef OMCS_OFFSET_NUMA_QNODE
-  static_assert(PAGE_SIZE % sizeof(OMCSQNode) == 0);
+  static_assert(PAGE_SIZE % sizeof(QNode) == 0);
 
   // Round up to the proper number of pages
-  uint32_t qnodes_per_page = PAGE_SIZE / sizeof(OMCSQNode);
+  uint32_t qnodes_per_page = PAGE_SIZE / sizeof(QNode);
   uint32_t npages = 0;
   uint32_t qnodes = 0;
   uint32_t sockets = numa_max_node() + 1;
-  while (qnodes < OMCSLock::kNumQueueNodes) {
+  while (qnodes < Lock::kNumQueueNodes) {
     qnodes += qnodes_per_page * sockets;
     npages += sockets;
   }
@@ -45,19 +72,19 @@ inline void init_qnodes() {
     socket_qnode_index[i].index = 0;
   }
 
-  base_qnode = (OMCSQNode *)numa_alloc_interleaved(npages * PAGE_SIZE);
+  base_qnode = (QNode *)numa_alloc_interleaved(npages * PAGE_SIZE);
   if (!base_qnode) {
     abort();
   }
 #else
   int ret = posix_memalign((void **)&base_qnode, CACHELINE_SIZE * 2,
-                           sizeof(OMCSQNode) * OMCSLock::kNumQueueNodes);
+                           sizeof(QNode) * Lock::kNumQueueNodes);
   if (ret) {
     abort();
   }
 
-  for (uint32_t i = 0; i < OMCSLock::kNumQueueNodes; ++i) {
-    new (base_qnode + i) OMCSQNode;
+  for (uint32_t i = 0; i < Lock::kNumQueueNodes; ++i) {
+    new (base_qnode + i) QNode;
   }
 #endif  // OMCS_OFFSET_NUMA_QNODE
 #endif  // OMCS_OFFSET
@@ -65,11 +92,11 @@ inline void init_qnodes() {
 }
 
 #ifdef OMCS_OFFSET
-inline thread_local OMCSQNode *qnodes = nullptr;
+inline thread_local QNode *qnodes = nullptr;
 
-inline OMCSQNode *get_qnode(size_t i) {
+inline QNode *get_qnode(size_t i) {
   assert(qnodes);
-  new (&qnodes[i]) OMCSQNode;
+  new (&qnodes[i]) QNode;
   return &qnodes[i];
 }
 #endif
@@ -80,17 +107,17 @@ inline void reset_tls_qnodes() {
   constexpr size_t QNODES_PER_THREAD = 4;
 #ifdef OMCS_OFFSET_NUMA_QNODE
   uint32_t socket = numa_node_of_cpu(sched_getcpu());
-  uint32_t qnodes_per_page = PAGE_SIZE / sizeof(OMCSQNode);
+  uint32_t qnodes_per_page = PAGE_SIZE / sizeof(QNode);
   uint32_t index = socket_qnode_index[socket].index.fetch_add(QNODES_PER_THREAD);
 
   uint32_t nsockets = numa_max_node() + 1;
   uint32_t page_num = index / qnodes_per_page * nsockets + socket;
   index = page_num * qnodes_per_page + index % qnodes_per_page;
-  qnodes = &omcs_impl::base_qnode[index];
+  qnodes = &offset::base_qnode[index];
 #else
   uint32_t index = next_node.fetch_add(QNODES_PER_THREAD);
-  qnodes = &omcs_impl::base_qnode[index];
+  qnodes = &offset::base_qnode[index];
 #endif  // OMCS_OFFSET_NUMA_QNODE
 #endif
 }
-}  // namespace omcs_impl
+}  // namespace offset

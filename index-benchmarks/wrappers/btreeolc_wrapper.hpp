@@ -45,7 +45,7 @@ class btreeolc_wrapper : public tree_api {
 };
 
 btreeolc_wrapper::btreeolc_wrapper(const tree_options_t &opt) {
-  omcs_impl::init_qnodes();
+  offset::init_qnodes();
   tree = new BTree();
 }
 
@@ -111,5 +111,5 @@ int btreeolc_wrapper::scan(const char *key, size_t key_sz, int scan_sz, char *&v
 
 void btreeolc_wrapper::tls_setup() {
   // XXX(shiges): hack
-  omcs_impl::reset_tls_qnodes();
+  offset::reset_tls_qnodes();
 }

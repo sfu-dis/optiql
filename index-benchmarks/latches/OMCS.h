@@ -7,6 +7,8 @@
 #include "OMCSImpl.h"
 #elif defined(STDRW_LOCK)
 #include "STDRW.h"
+#elif defined(MCSRW_LOCK)
+#include "MCSRW.h"
 #endif
 
 struct OMCSLock {
@@ -19,6 +21,10 @@ struct OMCSLock {
   using Lock = std_lock::STDRWLock;
   using Context = uint64_t;
   static constexpr const char *name = "STD RW Lock";
+#elif defined(MCSRW_LOCK)
+  using Lock = mcsrw::MCSRWLock;
+  using Context = mcsrw::MCSRWQNode;
+  static constexpr const char *name = "MCS RW Lock";
 #else
 #error "OMCS implementation is not defined."
 #endif
@@ -110,4 +116,8 @@ struct OMCSLock {
 static_assert(sizeof(OMCSLock) == 8, "sizeof OMCSLock is not 8-byte");
 #elif defined(STDRW_LOCK)
 static_assert(sizeof(OMCSLock) == 56, "sizeof OMCSLock is not 56-byte");
+#elif defined(MCSRW_LOCK)
+#if defined(OMCS_OFFSET)
+static_assert(sizeof(OMCSLock) == 8, "sizeof OMCSLock is not 8-byte");
+#endif
 #endif

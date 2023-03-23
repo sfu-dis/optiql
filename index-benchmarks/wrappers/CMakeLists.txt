@@ -123,6 +123,20 @@ foreach(page_size page_size_suffix IN ZIP_LISTS page_sizes page_size_suffixes)
     DEFINITIONS RWLOCK STDRW_LOCK BTREE_RWLOCK BTREE_PAGE_SIZE=${page_size}
   )
 
+  add_wrapper(
+    NAME btreelc_mcsrw_cwp${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS RWLOCK MCSRW_LOCK RWLOCK_WRITER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_RWLOCK BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
+
+  add_wrapper(
+    NAME btreelc_mcsrw_crp${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS RWLOCK MCSRW_LOCK RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_RWLOCK BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
+
 endforeach()
 
 # ART

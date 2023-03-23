@@ -48,7 +48,7 @@ class artolc_wrapper : public tree_api {
 };
 
 artolc_wrapper::artolc_wrapper(const tree_options_t &opt) {
-  omcs_impl::init_qnodes();
+  offset::init_qnodes();
   tree = new ART_OLC::Tree(loadKey, removeNode);
   key_size = opt.key_size;
   value_size = opt.value_size;
@@ -161,5 +161,5 @@ int artolc_wrapper::scan(const char *key, size_t key_sz, int scan_sz, char *&val
 
 void artolc_wrapper::tls_setup() {
   // XXX(shiges): hack
-  omcs_impl::reset_tls_qnodes();
+  offset::reset_tls_qnodes();
 }

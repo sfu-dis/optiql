@@ -134,6 +134,8 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
                'btreeomcs_leaf_op_read_callback',
                'btreeomcs_leaf_op_read_callback_baseline',
                'btreelc_stdrw',
+               'btreelc_mcsrw_cwp',
+               'btreelc_mcsrw_crp',
                'artolc_upgrade',
                'artomcs_offset', 'artomcs_op_read']
     labels = ['B+Tree OptLock',
@@ -143,6 +145,8 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
               'B+Tree OptiQL Callback',
               'B+Tree OptiQL Callback Baseline',
               'B+Tree STDRW',
+              'B+Tree MCSRW CWP',
+              'B+Tree MCSRW CRP',
               'ART OptLock',
               'ART OptiQL--', 'ART OptiQL']
     btree_indexes = [index for index in indexes if 'btree' in index]

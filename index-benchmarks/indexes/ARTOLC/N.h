@@ -19,7 +19,7 @@ using TID = uint64_t;
 
 #if defined(IS_CONTEXTFUL)
 #if defined(OMCS_OFFSET)
-#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *omcs_impl::get_qnode(i)
+#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *offset::get_qnode(i)
 #else
 #define DEFINE_CONTEXT(q, i) OMCSLock::Context q
 #endif
