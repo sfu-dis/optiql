@@ -478,6 +478,22 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     return ok;
   }
 #else
+#if defined(OMCS_OP_READ_NEW_API_BASELINE)
+  bool update(Key k, Value v) {
+    NodeBase *node = nullptr;
+    uint64_t versionNode = OMCSLock::kInvalidVersion;
+    bool opread = false;
+    DEFINE_CONTEXT(q, 0);
+    traverseToLeafExNewAPI(k, q, node, versionNode, opread);
+    if (opread) {
+      node->writeLockTurnOffOpRead();
+    }
+    auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
+    bool ok = leaf->update(k, v);
+    node->writeUnlock(&q);
+    return ok;
+  }
+#else
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
     uint64_t versionNode = OMCSLock::kInvalidVersion;
@@ -489,6 +505,7 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     node->writeUnlock(&q);
     return ok;
   }
+#endif
 #endif
 };
 
