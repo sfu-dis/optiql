@@ -42,6 +42,13 @@ struct OMCSLock {
 
   void writeLock(Context *q) { lock.lock(q); }
 
+#if defined(OMCS_OP_READ_NEW_API_CALLBACK)
+  template <class Callback>
+  void writeLockWithRead(Context *q, Callback &&cb) {
+    lock.lock(q, std::forward<Callback &&>(cb));
+  }
+#endif
+
   void upgradeToWriteLockOrRestart(uint64_t &version, Context *q, bool &needRestart) {
     // FIXME(shiges): update [version]
     needRestart = !lock.try_lock(q, version);

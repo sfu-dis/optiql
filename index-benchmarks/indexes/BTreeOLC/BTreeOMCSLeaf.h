@@ -466,7 +466,7 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     return ok;
   }
 
-#if not defined(OMCS_OP_READ_NEW_API)
+#if !defined(OMCS_OP_READ_NEW_API) && !defined(OMCS_OP_READ_NEW_API_CALLBACK)
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
     uint64_t versionNode = OMCSLock::kInvalidVersion;
@@ -477,7 +477,7 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     node->writeUnlock(&q);
     return ok;
   }
-#else
+#elif defined(OMCS_OP_READ_NEW_API)
 #if defined(OMCS_OP_READ_NEW_API_BASELINE)
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
@@ -506,6 +506,94 @@ struct BTreeOMCSLeaf : public BTreeBase<Key, Value> {
     return ok;
   }
 #endif
+#else
+  bool update(Key k, Value v) {
+    bool ok = false;
+    unsigned pos = 0;
+
+    NodeBase *node = nullptr;
+    uint64_t versionNode = OMCSLock::kInvalidVersion;
+    DEFINE_CONTEXT(q, 0);
+
+    int restartCount = 0;
+  restart:
+    if (restartCount++) yield(restartCount);
+    bool needRestart = false;
+
+    versionNode = OMCSLock::kInvalidVersion;
+    node = root;
+    if (node->getType() == PageType::BTreeLeaf) {
+      // The root node is a leaf node.
+      node->writeLockWithRead(&q, [&]() {
+        pos = 0;
+        ok = false;
+        auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
+        assert(leaf->count <= (BTreeLeaf<Key, Value>::maxEntries));
+        if (leaf->count) {
+          pos = leaf->lowerBound(k);
+          if ((pos < leaf->count) && (leaf->data[pos].first == k)) {
+            ok = true;
+          }
+        }
+      });
+      if (node != root) {
+        node->writeUnlock(&q);
+        goto restart;
+      }
+      goto do_update;
+    }
+    versionNode = node->readLockOrRestart(needRestart);
+    if (needRestart || node != root) goto restart;
+
+    while (node->getType() == PageType::BTreeInner) {
+      auto inner = static_cast<BTreeInner<Key> *>(node);
+
+      NodeBase *next = inner->children[inner->lowerBound(k)];
+      node->checkOrRestart(versionNode, needRestart);
+      if (needRestart) goto restart;
+
+      uint64_t versionNext = OMCSLock::kInvalidVersion;
+      if (next->getType() == PageType::BTreeInner) {
+        // [next] is an inner node
+        versionNext = next->readLockOrRestart(needRestart);
+        if (needRestart) goto restart;
+      } else {
+        // [next] is a leaf node, just take exclusive latch
+        next->writeLockWithRead(&q, [&]() {
+          pos = 0;
+          ok = false;
+          auto leaf = static_cast<BTreeLeaf<Key, Value> *>(next);
+          assert(leaf->count <= (BTreeLeaf<Key, Value>::maxEntries));
+          if (leaf->count) {
+            pos = leaf->lowerBound(k);
+            if ((pos < leaf->count) && (leaf->data[pos].first == k)) {
+              ok = true;
+            }
+          }
+        });
+      }
+      node->readUnlockOrRestart(versionNode, needRestart);
+      if (needRestart) {
+        if (next->getType() == PageType::BTreeLeaf) {
+          next->writeUnlock(&q);
+        }
+        goto restart;
+      }
+
+      node = next;
+      versionNode = versionNext;
+    }
+
+    // We now have exclusive latch on [node]
+  do_update:
+    auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
+    // Update
+    if (ok) {
+      leaf->data[pos].second = v;
+    }
+    node->writeUnlock(&q);
+    return ok;
+  }
 #endif
 };
 

@@ -6,6 +6,7 @@
 
 #include <atomic>
 #include <cassert>
+#include <type_traits>
 
 namespace omcs_impl {
 
@@ -283,7 +284,10 @@ class OMCSLock {
 #endif
   }
 
-  inline void lock(OMCSQNode *qnode) {
+  inline void lock(OMCSQNode *qnode) { lock(qnode, nullptr); }
+
+  template <class Callback>
+  inline void lock(OMCSQNode *qnode, Callback &&cb) {
     assert(qnode != nullptr);
 
 #ifndef NDEBUG
@@ -309,6 +313,10 @@ class OMCSLock {
 #endif  // OMCS_OFFSET
       uint64_t v1 = v0 + kVersionStride;
       qnode->set_version(v1);
+
+      if constexpr (std::is_invocable_v<Callback>) {
+        cb();
+      }
       return;
     }
 
@@ -318,6 +326,11 @@ class OMCSLock {
     while (qnode->get_version() == OMCSLock::kInvalidVersion) {
     }
 
+#if !defined(OMCS_OP_READ_NEW_API_CALLBACK_BASELINE)
+    if constexpr (std::is_invocable_v<Callback>) {
+      cb();
+    }
+#endif
 #ifdef OMCS_OP_READ
 #ifdef OMCS_OFFSET
     // Remove the consistent bit + version (actually not necessary to remove version, but just to be clear)
@@ -325,6 +338,11 @@ class OMCSLock {
 #else
     tail_.fetch_and(~kConsistentBit);
 #endif
+#endif
+#if defined(OMCS_OP_READ_NEW_API_CALLBACK_BASELINE)
+    if constexpr (std::is_invocable_v<Callback>) {
+      cb();
+    }
 #endif
   }
 

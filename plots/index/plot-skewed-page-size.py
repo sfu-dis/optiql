@@ -24,18 +24,22 @@ indexes = ['btreeolc_upgrade',
            'btreeomcs_leaf_op_read',
            'btreeomcs_leaf_op_read_new_api',
            'btreeomcs_leaf_op_read_new_api_baseline',
+           'btreeomcs_leaf_op_read_callback',
+           'btreeomcs_leaf_op_read_callback_baseline',
           ]
 labels = ['B+Tree OptLock',
           'B+Tree OptiQL-NOR',
           'B+Tree OptiQL',
           'NEW API',
           'NEW API Baseline',
+          'Callback',
+          'Callback Baseline',
          ]
 page_sizes = [256, 512, 1024, 2048, 4096, 8192, 16384]
 page_size_suffices = ['', '_512', '_1K', '_2K', '_4K', '_8K', '_16K']
 all_indexes = [index + suffix for index in indexes for suffix in page_size_suffices]
 all_labels = [label + suffix for label in labels for suffix in page_size_suffices]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'OptiQL-NA', 'OptiQL-NA-Baseline']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'New API', 'New API-Baseline', 'Callback', 'Callback-Baseline']
 
 threads = [1, 20, 40]
 
