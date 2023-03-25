@@ -152,6 +152,9 @@ struct BTreeLeaf : public NodeBase {
         return true;
       }
     }
+    if (opread) {
+      writeLockTurnOffOpRead();
+    }
     return false;
   }
 #endif
