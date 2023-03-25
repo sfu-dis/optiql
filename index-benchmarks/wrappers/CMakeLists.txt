@@ -22,8 +22,8 @@ macro(add_wrapper)
   endif ()
 endmacro()
 
-list(APPEND page_sizes 256 4096)
-list(APPEND page_size_suffixes "" "_4K")
+list(APPEND page_sizes 256 512 1024 2048 4096 8192 16384)
+list(APPEND page_size_suffixes "" "_512" "_1K" "_2K" "_4K" "_8K" "_16K")
 
 # B+ tree
 foreach(omcs_impl omcs_impl_suffix IN ZIP_LISTS omcs_impls omcs_impl_suffixes)
