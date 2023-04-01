@@ -1,0 +1,18 @@
+
+macro(add_libart)
+  cmake_parse_arguments(LIBART "" "NAME" "DEFINITIONS;LIBRARIES" ${ARGN})
+
+  add_library(${LIBART_NAME} ${ARTOLC_SRC})
+  target_link_libraries(${LIBART_NAME} glog ${LIBART_LIBRARIES})
+  target_compile_definitions(${LIBART_NAME} PUBLIC ${LIBART_DEFINITIONS})
+endmacro()
+
+set(ARTOLC_SRC Tree.cpp N.cpp N4.cpp N16.cpp N48.cpp N256.cpp)
+
+add_libart(
+  NAME artlc_mcsrw_crp
+  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+)
+
+add_executable(artlc_mcsrw_crp_example example.cpp)
+target_link_libraries(artlc_mcsrw_crp_example artlc_mcsrw_crp tbb)

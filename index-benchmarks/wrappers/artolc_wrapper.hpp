@@ -2,7 +2,11 @@
 
 #include <glog/logging.h>
 
+#ifdef OMCS_LOCK
 #include "indexes/ARTOLC/Tree.h"
+#elif defined(MCSRW_LOCK)
+#include "indexes/ARTLC/Tree.h"
+#endif
 #include "latches/OMCSOffset.h"
 #include "third_party/art_ebr/Epoche.h"
 #include "tree_api.hpp"

@@ -210,5 +210,12 @@ add_wrapper(
 #   LIBRARIES artomcs_acquire tbb
 # )
 
+add_wrapper(
+  NAME artlc_mcsrw_crp
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+  LIBRARIES artlc_mcsrw_crp tbb numa
+)
+
 add_executable(wrapper_tests wrapper_tests.cpp)
 target_link_libraries(wrapper_tests gtest btreeolc_wrapper pthread)
