@@ -60,12 +60,10 @@ class Tree {
 #if defined(IS_CONTEXTFUL)
   bool traverseToLeafEx(const Key &k, OMCSLock::Context &q, N *&parentNode, uint32_t &level,
                         bool &upgraded);
-  bool traverseToLeafUpgradeEx(const Key &k, OMCSLock::Context &q, N *&parentNode, uint32_t &level);
   bool traverseToLeafAcquireEx(const Key &k, OMCSLock::Context qnodes[], N *&parentNode,
                                uint32_t &level, OMCSLock::Context *&q);
 #else
   bool traverseToLeafEx(const Key &k, N *&parentNode, uint32_t &level, bool &upgraded);
-  bool traverseToLeafUpgradeEx(const Key &k, N *&parentNode, uint32_t &level);
   bool traverseToLeafAcquireEx(const Key &k, N *&parentNode, uint32_t &level);
 #endif
 
@@ -91,16 +89,6 @@ class Tree {
   bool insert(const Key &k, TID tid);
 
   bool update(const Key &k, TID tid);
-
-#if 0
-  bool update(const Key &k, const char *value, size_t value_sz);
-
-  bool update(const Key &k);
-#endif
-
-#ifdef ART_UPSERT
-  bool upsert(const Key &k, TID tid);
-#endif
 
   bool remove(const Key &k, TID tid);
 };
