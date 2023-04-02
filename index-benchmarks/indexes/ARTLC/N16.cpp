@@ -85,11 +85,11 @@ void N16::deleteChildren() {
 }
 
 uint64_t N16::getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                          uint32_t &childrenCount) const {
+                          uint32_t &childrenCount) {
 restart:
   bool needRestart = false;
-  uint64_t v;
-  v = readLockOrRestart(needRestart);
+  uint64_t v = 0;
+  readLockOrRestart(needRestart);
   if (needRestart) goto restart;
   childrenCount = 0;
   auto startPos = getChildPos(start);
@@ -104,8 +104,7 @@ restart:
     children[childrenCount] = std::make_tuple(flipSign(keys[p - this->children]), *p);
     childrenCount++;
   }
-  readUnlockOrRestart(v, needRestart);
-  if (needRestart) goto restart;
+  readUnlock();
   return v;
 }
 }  // namespace ART_OLC

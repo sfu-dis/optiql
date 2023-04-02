@@ -4,8 +4,8 @@
 
 #ifndef ART_OPTIMISTIC_LOCK_COUPLING_N_H
 #define ART_OPTIMISTIC_LOCK_COUPLING_N_H
-//#define ART_NOREADLOCK
-//#define ART_NOWRITELOCK
+// #define ART_NOREADLOCK
+// #define ART_NOWRITELOCK
 #include <stdint.h>
 #include <string.h>
 
@@ -23,19 +23,16 @@ using TID = uint64_t;
 #else
 #define DEFINE_CONTEXT(q, i) OMCSLock::Context q
 #endif
-#define LOCK_NODE(n) n->writeLockOrRestart(&q, needRestart)
-#define UPGRADE_NODE(n) n->upgradeToWriteLockOrRestart(v, &q, needRestart)
-#define UPGRADE_PARENT() \
-  parentNode->upgradeToWriteLockOrRestart(parentVersion, &parentQ, needRestart)
-#define UNLOCK_NODE(n) n->writeUnlock(&q)
-#define UNLOCK_PARENT() parentNode->writeUnlock(&parentQ)
+#define LOCK_NODE(n, q) n->writeLockOrRestart(q, needRestart)
+#define UNLOCK_NODE(n, q) n->writeUnlock(q)
+#define READ_LOCK_NODE(n, q) n->readLockOrRestart(q, needRestart)
+#define READ_UNLOCK_NODE(n, q) n->readUnlock(q)
 #else
-#define DEFINE_CONTEXT(q, i)
-#define LOCK_NODE(n) n->writeLockOrRestart(needRestart)
-#define UPGRADE_NODE(n) n->upgradeToWriteLockOrRestart(v, needRestart)
-#define UPGRADE_PARENT() parentNode->upgradeToWriteLockOrRestart(parentVersion, needRestart)
-#define UNLOCK_NODE(n) n->writeUnlock()
-#define UNLOCK_PARENT() parentNode->writeUnlock()
+#define DEFINE_CONTEXT(q, i) OMCSLock::Context q
+#define LOCK_NODE(n, q) n->writeLockOrRestart(needRestart)
+#define UNLOCK_NODE(n, q) n->writeUnlock()
+#define READ_LOCK_NODE(n, q) n->readLockOrRestart(needRestart)
+#define READ_UNLOCK_NODE(n, q) n->readUnlock()
 #endif
 
 namespace ART_OLC {
@@ -122,8 +119,6 @@ class N {
 
   uint32_t getCount() const;
 
-  bool isLocked() const { return lock.isLocked(); }
-
   inline void checkObsoleteOrRestart(bool &needRestart) const {
     if (needRestart) {
       return;
@@ -143,12 +138,7 @@ class N {
   }
 
   void upgradeToWriteLockOrRestart(uint64_t &version, bool &needRestart) {
-    lock.upgradeToWriteLockOrRestart(version, needRestart);
-    if (needRestart) return;
-    checkObsoleteOrRestart(needRestart);
-    if (needRestart) {
-      lock.writeUnlock();
-    }
+    LOG(FATAL) << "Not supported";
   }
 
   void writeUnlock() {
@@ -164,34 +154,35 @@ class N {
     }
   }
 
-  void upgradeToWriteLockOrRestart(uint64_t &version, Lock::Context *q, bool &needRestart) {
-    lock.upgradeToWriteLockOrRestart(version, q, needRestart);
-    if (needRestart) return;
-    checkObsoleteOrRestart(needRestart);
-    if (needRestart) {
-      lock.writeUnlock(q);
-    }
-  }
-
   void writeUnlock(Lock::Context *q) {
     // XXX(shiges): no need to check obsolete
     lock.writeUnlock(q);
   }
 
-  uint64_t readLockOrRestart(bool &needRestart) const {
-    auto v = lock.readLockOrRestart(needRestart);
+  void readLockOrRestart(bool &needRestart) {
+    lock.readLock();
     checkObsoleteOrRestart(needRestart);
-    return v;
+    if (needRestart) {
+      lock.readUnlock();
+    }
   }
 
-  void checkOrRestart(uint64_t startRead, bool &needRestart) const {
-    lock.checkOrRestart(startRead, needRestart);
-    checkObsoleteOrRestart(needRestart);
+  void readUnlock() {
+    // XXX(shiges): no need to check obsolete
+    lock.readUnlock();
   }
 
-  void readUnlockOrRestart(uint64_t startRead, bool &needRestart) const {
-    lock.readUnlockOrRestart(startRead, needRestart);
+  void readLockOrRestart(Lock::Context *q, bool &needRestart) {
+    lock.readLock(q);
     checkObsoleteOrRestart(needRestart);
+    if (needRestart) {
+      lock.readUnlock(q);
+    }
+  }
+
+  void readUnlock(Lock::Context *q) {
+    // XXX(shiges): no need to check obsolete
+    lock.readUnlock(q);
   }
 
   bool isObsolete() const { return prefixCount.getObsolete(); }
@@ -203,6 +194,10 @@ class N {
   static void insertAndUnlock(N *node, uint64_t v, N *parentNode, uint64_t parentVersion,
                               uint8_t keyParent, uint8_t key, N *val, bool &needRestart,
                               N *&obsoleteN);
+
+  static void insertAndUnlockPessimistic(N *node, N *parentNode, OMCSLock::Context *q,
+                                         OMCSLock::Context *pq, uint8_t keyParent, uint8_t key,
+                                         N *val, bool &needRestart, N *&obsoleteN);
 
   static bool change(N *node, uint8_t key, N *val);
 
@@ -228,7 +223,7 @@ class N {
 
   static N *getAnyChild(const N *n);
 
-  static TID getAnyChildTid(const N *n, bool &needRestart);
+  static TID getAnyChildTid(N *n, bool &needRestart);
 
   static void deleteChildren(N *node);
 
@@ -240,11 +235,16 @@ class N {
   static void insertGrow(curN *n, uint64_t v, N *parentNode, uint64_t parentVersion,
                          uint8_t keyParent, uint8_t key, N *val, bool &needRestart, N *&obsoleteN);
 
+  template <typename curN, typename biggerN>
+  static void insertGrowPessimistic(curN *n, N *parentNode, OMCSLock::Context *q,
+                                    OMCSLock::Context *pq, uint8_t keyParent, uint8_t key, N *val,
+                                    bool &needRestart, N *&obsoleteN);
+
   template <typename curN, typename smallerN>
   static void removeAndShrink(curN *n, uint64_t v, N *parentNode, uint64_t parentVersion,
                               uint8_t keyParent, uint8_t key, bool &needRestart, N *&obsoleteN);
 
-  static uint64_t getChildren(const N *node, uint8_t start, uint8_t end,
+  static uint64_t getChildren(N *node, uint8_t start, uint8_t end,
                               std::tuple<uint8_t, N *> children[], uint32_t &childrenCount);
 };
 
@@ -278,7 +278,7 @@ class N4 : public N {
   void deleteChildren();
 
   uint64_t getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                       uint32_t &childrenCount) const;
+                       uint32_t &childrenCount);
 };
 
 static_assert(sizeof(N) == sizeof(N::Lock) + 24);
@@ -344,7 +344,7 @@ class N16 : public N {
   void deleteChildren();
 
   uint64_t getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                       uint32_t &childrenCount) const;
+                       uint32_t &childrenCount);
 };
 
 class N48 : public N {
@@ -379,7 +379,7 @@ class N48 : public N {
   void deleteChildren();
 
   uint64_t getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                       uint32_t &childrenCount) const;
+                       uint32_t &childrenCount);
 };
 
 class N256 : public N {
@@ -410,7 +410,7 @@ class N256 : public N {
   void deleteChildren();
 
   uint64_t getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                       uint32_t &childrenCount) const;
+                       uint32_t &childrenCount);
 };
 }  // namespace ART_OLC
 #endif  // ART_OPTIMISTIC_LOCK_COUPLING_N_H

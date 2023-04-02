@@ -66,16 +66,17 @@ bool N::change(N *node, uint8_t key, N *val) {
 template <typename curN, typename biggerN>
 void N::insertGrow(curN *n, uint64_t v, N *parentNode, uint64_t parentVersion, uint8_t keyParent,
                    uint8_t key, N *val, bool &needRestart, N *&obsoleteN) {
+  LOG(FATAL) << "Not supported";
+#if 0
   if (!n->isFull()) {
     if (parentNode != nullptr) {
-      parentNode->readUnlockOrRestart(parentVersion, needRestart);
-      if (needRestart) return;
+      parentNode->readUnlock();
     }
     DEFINE_CONTEXT(q, 0);
-    UPGRADE_NODE(n);
+    UPGRADE_NODE(n, q);
     if (needRestart) return;
     n->insert(key, val);
-    UNLOCK_NODE(n);
+    UNLOCK_NODE(n, q);
     return;
   }
 
@@ -100,6 +101,7 @@ void N::insertGrow(curN *n, uint64_t v, N *parentNode, uint64_t parentVersion, u
   UNLOCK_NODE(n);
   obsoleteN = n;
   UNLOCK_PARENT();
+#endif
 }
 
 void N::insertAndUnlock(N *node, uint64_t v, N *parentNode, uint64_t parentVersion,
@@ -127,6 +129,62 @@ void N::insertAndUnlock(N *node, uint64_t v, N *parentNode, uint64_t parentVersi
       auto n = static_cast<N256 *>(node);
       insertGrow<N256, N256>(n, v, parentNode, parentVersion, keyParent, key, val, needRestart,
                              obsoleteN);
+      break;
+    }
+  }
+}
+
+template <typename curN, typename biggerN>
+void N::insertGrowPessimistic(curN *n, N *parentNode, OMCSLock::Context *q, OMCSLock::Context *pq,
+                              uint8_t keyParent, uint8_t key, N *val, bool &needRestart,
+                              N *&obsoleteN) {
+  if (!n->isFull()) {
+    if (parentNode != nullptr) {
+      UNLOCK_NODE(parentNode, pq);
+    }
+    n->insert(key, val);
+    UNLOCK_NODE(n, q);
+    return;
+  }
+
+  auto nBig = new biggerN(n->getPrefix(), n->getPrefixLength());
+  n->copyTo(nBig);
+  nBig->insert(key, val);
+
+  N::change(parentNode, keyParent, nBig);
+
+  n->setObsolete();
+  UNLOCK_NODE(n, q);
+  obsoleteN = n;
+  UNLOCK_NODE(parentNode, pq);
+}
+
+void N::insertAndUnlockPessimistic(N *node, N *parentNode, OMCSLock::Context *q,
+                                   OMCSLock::Context *pq, uint8_t keyParent, uint8_t key, N *val,
+                                   bool &needRestart, N *&obsoleteN) {
+  switch (node->getType()) {
+    case NTypes::N4: {
+      auto n = static_cast<N4 *>(node);
+      insertGrowPessimistic<N4, N16>(n, parentNode, q, pq, keyParent, key, val, needRestart,
+                                     obsoleteN);
+      break;
+    }
+    case NTypes::N16: {
+      auto n = static_cast<N16 *>(node);
+      insertGrowPessimistic<N16, N48>(n, parentNode, q, pq, keyParent, key, val, needRestart,
+                                      obsoleteN);
+      break;
+    }
+    case NTypes::N48: {
+      auto n = static_cast<N48 *>(node);
+      insertGrowPessimistic<N48, N256>(n, parentNode, q, pq, keyParent, key, val, needRestart,
+                                       obsoleteN);
+      break;
+    }
+    case NTypes::N256: {
+      auto n = static_cast<N256 *>(node);
+      insertGrowPessimistic<N256, N256>(n, parentNode, q, pq, keyParent, key, val, needRestart,
+                                        obsoleteN);
       break;
     }
   }
@@ -188,10 +246,11 @@ void N::deleteChildren(N *node) {
 template <typename curN, typename smallerN>
 void N::removeAndShrink(curN *n, uint64_t v, N *parentNode, uint64_t parentVersion,
                         uint8_t keyParent, uint8_t key, bool &needRestart, N *&obsoleteN) {
+  LOG(FATAL) << "Not supported";
+#if 0
   if (!n->isUnderfull() || parentNode == nullptr) {
     if (parentNode != nullptr) {
-      parentNode->readUnlockOrRestart(parentVersion, needRestart);
-      if (needRestart) return;
+      parentNode->readUnlock();
     }
     DEFINE_CONTEXT(q, 0);
     UPGRADE_NODE(n);
@@ -222,6 +281,7 @@ void N::removeAndShrink(curN *n, uint64_t v, N *parentNode, uint64_t parentVersi
   UNLOCK_NODE(n);
   obsoleteN = n;
   UNLOCK_PARENT();
+#endif
 }
 
 void N::removeAndUnlock(N *node, uint64_t v, uint8_t key, N *parentNode, uint64_t parentVersion,
@@ -335,42 +395,45 @@ void N::deleteNode(N *node) {
   delete node;
 }
 
-TID N::getAnyChildTid(const N *n, bool &needRestart) {
-  const N *nextNode = n;
+TID N::getAnyChildTid(N *n, bool &needRestart) {
+  LOG(FATAL) << "Not supported";
+#if 0
+  N *nextNode = n;
 
   while (true) {
-    const N *node = nextNode;
-    auto v = node->readLockOrRestart(needRestart);
+    N *node = nextNode;
+    uint64_t v = 0;
+    node->readLockOrRestart(needRestart);
     if (needRestart) return 0;
 
     nextNode = getAnyChild(node);
-    node->readUnlockOrRestart(v, needRestart);
-    if (needRestart) return 0;
+    node->readUnlock();
 
     assert(nextNode != nullptr);
     if (isLeaf(nextNode)) {
       return getLeaf(nextNode);
     }
   }
+#endif
 }
 
-uint64_t N::getChildren(const N *node, uint8_t start, uint8_t end,
-                        std::tuple<uint8_t, N *> children[], uint32_t &childrenCount) {
+uint64_t N::getChildren(N *node, uint8_t start, uint8_t end, std::tuple<uint8_t, N *> children[],
+                        uint32_t &childrenCount) {
   switch (node->getType()) {
     case NTypes::N4: {
-      auto n = static_cast<const N4 *>(node);
+      auto n = static_cast<N4 *>(node);
       return n->getChildren(start, end, children, childrenCount);
     }
     case NTypes::N16: {
-      auto n = static_cast<const N16 *>(node);
+      auto n = static_cast<N16 *>(node);
       return n->getChildren(start, end, children, childrenCount);
     }
     case NTypes::N48: {
-      auto n = static_cast<const N48 *>(node);
+      auto n = static_cast<N48 *>(node);
       return n->getChildren(start, end, children, childrenCount);
     }
     case NTypes::N256: {
-      auto n = static_cast<const N256 *>(node);
+      auto n = static_cast<N256 *>(node);
       return n->getChildren(start, end, children, childrenCount);
     }
   }

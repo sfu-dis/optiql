@@ -45,27 +45,22 @@ class Tree {
   enum class PCEqualsResults : uint8_t { BothMatch, Contained, NoMatch };
   static CheckPrefixResult checkPrefix(N *n, const Key &k, uint32_t &level);
 
-  static CheckPrefixPessimisticResult checkPrefixPessimistic(
-      N *n, uint64_t v, const Key &k, uint32_t &level, uint8_t &nonMatchingKey,
-      Prefix &nonMatchingPrefix, LoadKeyFunction loadKey, bool &needRestart);
+  static CheckPrefixPessimisticResult checkPrefixPessimistic(N *n, const Key &k, uint32_t &level,
+                                                             uint8_t &nonMatchingKey,
+                                                             Prefix &nonMatchingPrefix,
+                                                             LoadKeyFunction loadKey,
+                                                             bool &needRestart);
 
-  static PCCompareResults checkPrefixCompare(const N *n, const Key &k, uint8_t fillKey,
-                                             uint32_t &level, LoadKeyFunction loadKey,
-                                             bool &needRestart);
+  static PCCompareResults checkPrefixCompare(N *n, const Key &k, uint8_t fillKey, uint32_t &level,
+                                             LoadKeyFunction loadKey, bool &needRestart);
 
-  static PCEqualsResults checkPrefixEquals(const N *n, uint32_t &level, const Key &start,
-                                           const Key &end, LoadKeyFunction loadKey,
-                                           bool &needRestart);
+  static PCEqualsResults checkPrefixEquals(N *n, uint32_t &level, const Key &start, const Key &end,
+                                           LoadKeyFunction loadKey, bool &needRestart);
 
-#if defined(IS_CONTEXTFUL)
-  bool traverseToLeafEx(const Key &k, OMCSLock::Context &q, N *&parentNode, uint32_t &level,
-                        bool &upgraded);
-  bool traverseToLeafAcquireEx(const Key &k, OMCSLock::Context qnodes[], N *&parentNode,
-                               uint32_t &level, OMCSLock::Context *&q);
-#else
-  bool traverseToLeafEx(const Key &k, N *&parentNode, uint32_t &level, bool &upgraded);
-  bool traverseToLeafAcquireEx(const Key &k, N *&parentNode, uint32_t &level);
-#endif
+  bool traverseToLeafEx(const Key &k, OMCSLock::Context *q, OMCSLock::Context *nq, bool &found,
+                        N *&parentNode, uint32_t &level, OMCSLock::Context *&q_out);
+  bool traverseToLeafPessimisticEx(const Key &k, OMCSLock::Context *q, OMCSLock::Context *nq,
+                                   N *&parentNode, uint32_t &level, OMCSLock::Context *&q_out);
 
   void tryExpand(const Key &k, N *parentNode, uint32_t level, N *tid);
 
@@ -91,6 +86,9 @@ class Tree {
   bool update(const Key &k, TID tid);
 
   bool remove(const Key &k, TID tid);
+
+ protected:
+  bool insertPessimistic(const Key &k, TID tid);
 };
 }  // namespace ART_OLC
 #endif  // ART_OPTIMISTICLOCK_COUPLING_N_H

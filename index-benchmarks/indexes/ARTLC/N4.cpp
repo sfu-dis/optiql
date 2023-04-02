@@ -88,11 +88,11 @@ std::tuple<N *, uint8_t> N4::getSecondChild(const uint8_t key) const {
 }
 
 uint64_t N4::getChildren(uint8_t start, uint8_t end, std::tuple<uint8_t, N *> *&children,
-                         uint32_t &childrenCount) const {
+                         uint32_t &childrenCount) {
 restart:
   bool needRestart = false;
-  uint64_t v;
-  v = readLockOrRestart(needRestart);
+  uint64_t v = 0;
+  readLockOrRestart(needRestart);
   if (needRestart) goto restart;
   childrenCount = 0;
   for (uint32_t i = 0; i < count; ++i) {
@@ -101,8 +101,7 @@ restart:
       childrenCount++;
     }
   }
-  readUnlockOrRestart(v, needRestart);
-  if (needRestart) goto restart;
+  readUnlock();
   return v;
 }
 }  // namespace ART_OLC

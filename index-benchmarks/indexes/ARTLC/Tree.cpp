@@ -19,44 +19,45 @@ Tree::~Tree() {
 }
 
 TID Tree::lookup(const Key &k) const {
+  DEFINE_CONTEXT(q0, 0);
+  DEFINE_CONTEXT(q1, 1);
+
+  OMCSLock::Context *q = &q0;
+  OMCSLock::Context *nq = &q1;
+
 restart:
   bool needRestart = false;
 
   N *node;
   N *parentNode = nullptr;
-  uint64_t v;
   uint32_t level = 0;
   bool optimisticPrefixMatch = false;
 
   node = root;
-  v = node->readLockOrRestart(needRestart);
+  READ_LOCK_NODE(node, q);
   if (needRestart) goto restart;
   while (true) {
     switch (checkPrefix(node, k, level)) {  // increases level
       case CheckPrefixResult::NoMatch:
-        node->readUnlockOrRestart(v, needRestart);
-        if (needRestart) goto restart;
+        READ_UNLOCK_NODE(node, q);
         return 0;
       case CheckPrefixResult::OptimisticMatch:
         optimisticPrefixMatch = true;
         // fallthrough
       case CheckPrefixResult::Match:
         if (k.getKeyLen() <= level) {
-          node->readUnlockOrRestart(v, needRestart);
-          if (needRestart) goto restart;
+          READ_UNLOCK_NODE(node, q);
           return 0;
         }
         parentNode = node;
         node = N::getChild(k[level], parentNode);
-        parentNode->checkOrRestart(v, needRestart);
-        if (needRestart) goto restart;
 
         if (node == nullptr) {
+          READ_UNLOCK_NODE(parentNode, q);
           return 0;
         }
         if (N::isLeaf(node)) {
-          parentNode->readUnlockOrRestart(v, needRestart);
-          if (needRestart) goto restart;
+          READ_UNLOCK_NODE(parentNode, q);
 
           TID tid = N::getLeaf(node);
           if (level < k.getKeyLen() - 1 || optimisticPrefixMatch) {
@@ -66,17 +67,22 @@ restart:
         }
         level++;
     }
-    uint64_t nv = node->readLockOrRestart(needRestart);
-    if (needRestart) goto restart;
+    READ_LOCK_NODE(node, nq);
+    if (needRestart) {
+      READ_UNLOCK_NODE(parentNode, q);
+      goto restart;
+    }
 
-    parentNode->readUnlockOrRestart(v, needRestart);
-    if (needRestart) goto restart;
-    v = nv;
+    READ_UNLOCK_NODE(parentNode, q);
+    std::swap(q, nq);
   }
 }
 
 bool Tree::lookupRange(const Key &start, const Key &end, Key &continueKey, TID result[],
                        std::size_t resultSize, std::size_t &resultsFound) const {
+  LOG(FATAL) << "Not supported";
+  return false;
+#if 0
   for (uint32_t i = 0; i < std::min(start.getKeyLen(), end.getKeyLen()); ++i) {
     if (start[i] > end[i]) {
       resultsFound = 0;
@@ -323,10 +329,14 @@ restart:
   } else {
     return false;
   }
+#endif
 }
 
 bool Tree::lookupRange(const Key &start, TID result[], std::size_t resultSize,
                        std::size_t &resultsFound) const {
+  LOG(FATAL) << "Not supported";
+  return false;
+#if 0
   TID toContinue = 0;
   std::function<void(const N *)> copy = [&result, &resultSize, &resultsFound, &toContinue,
                                          &copy](const N *node) {
@@ -488,6 +498,7 @@ restart:
   }
 
   return false;
+#endif
 }
 
 TID Tree::checkKey(const TID tid, const Key &k) const {
@@ -499,7 +510,13 @@ TID Tree::checkKey(const TID tid, const Key &k) const {
   return 0;
 }
 
-bool Tree::insert(const Key &k, TID tid) {
+bool Tree::insertPessimistic(const Key &k, TID tid) {
+  DEFINE_CONTEXT(q0, 0);
+  DEFINE_CONTEXT(q1, 1);
+
+  OMCSLock::Context *q = &q0;
+  OMCSLock::Context *pq = &q1;
+
 restart:
   bool needRestart = false;
 
@@ -514,28 +531,29 @@ restart:
     parentNode = node;
     parentKey = nodeKey;
     node = nextNode;
-    auto v = node->readLockOrRestart(needRestart);
-    if (needRestart) goto restart;
+    std::swap(q, pq);
+    LOCK_NODE(node, q);
+    if (needRestart) {
+      if (parentNode != nullptr) {
+        UNLOCK_NODE(parentNode, pq);
+      }
+      goto restart;
+    }
 
     uint32_t nextLevel = level;
 
     uint8_t nonMatchingKey;
     Prefix remainingPrefix;
-    auto res = checkPrefixPessimistic(node, v, k, nextLevel, nonMatchingKey, remainingPrefix,
+    auto res = checkPrefixPessimistic(node, k, nextLevel, nonMatchingKey, remainingPrefix,
                                       this->loadKey, needRestart);  // increases level
-    if (needRestart) goto restart;
+    if (needRestart) {
+      if (parentNode != nullptr) {
+        UNLOCK_NODE(parentNode, pq);
+      }
+      goto restart;
+    }
     switch (res) {
       case CheckPrefixPessimisticResult::NoMatch: {
-        DEFINE_CONTEXT(parentQ, 1);
-        DEFINE_CONTEXT(q, 0);
-        UPGRADE_PARENT();
-        if (needRestart) goto restart;
-
-        UPGRADE_NODE(node);
-        if (needRestart) {
-          UNLOCK_PARENT();
-          goto restart;
-        }
         // 1) Create new node which will be parent of node, Set common prefix, level to this node
         auto newNode = new N4(node->getPrefix(), nextLevel - level);
 
@@ -545,12 +563,12 @@ restart:
 
         // 3) upgradeToWriteLockOrRestart, update parentNode to point to the new node, unlock
         N::change(parentNode, parentKey, newNode);
-        UNLOCK_PARENT();
+        UNLOCK_NODE(parentNode, pq);
 
         // 4) update prefix of node, unlock
         node->setPrefix(remainingPrefix, node->getPrefixLength() - ((nextLevel - level) + 1));
 
-        UNLOCK_NODE(node);
+        UNLOCK_NODE(node, q);
         return true;
       }
       case CheckPrefixPessimisticResult::Match:
@@ -559,13 +577,11 @@ restart:
     level = nextLevel;
     nodeKey = k[level];
     nextNode = N::getChild(nodeKey, node);
-    node->checkOrRestart(v, needRestart);
-    if (needRestart) goto restart;
 
     if (nextNode == nullptr) {
       N *obsoleteN = nullptr;
-      N::insertAndUnlock(node, v, parentNode, parentVersion, parentKey, nodeKey, N::setLeaf(tid),
-                         needRestart, obsoleteN);
+      N::insertAndUnlockPessimistic(node, parentNode, q, pq, parentKey, nodeKey, N::setLeaf(tid),
+                                    needRestart, obsoleteN);
       if (needRestart) goto restart;
       if (obsoleteN) {
         this->removeNode(obsoleteN);
@@ -574,8 +590,7 @@ restart:
     }
 
     if (parentNode != nullptr) {
-      parentNode->readUnlockOrRestart(parentVersion, needRestart);
-      if (needRestart) goto restart;
+      UNLOCK_NODE(parentNode, pq);
     }
 
     if (N::isLeaf(nextNode)) {
@@ -584,14 +599,9 @@ restart:
 
       if (key == k) {
         // key already exists
-        node->readUnlockOrRestart(v, needRestart);
-        if (needRestart) goto restart;
+        UNLOCK_NODE(node, q);
         return false;
       }
-
-      DEFINE_CONTEXT(q, 0);
-      UPGRADE_NODE(node);
-      if (needRestart) goto restart;
 
       level++;
       uint32_t prefixLength = 0;
@@ -603,288 +613,163 @@ restart:
       n4->insert(k[level + prefixLength], N::setLeaf(tid));
       n4->insert(key[level + prefixLength], nextNode);
       N::change(node, k[level - 1], n4);
-      UNLOCK_NODE(node);
+      UNLOCK_NODE(node, q);
       return true;
     }
     level++;
-    parentVersion = v;
   }
 }
 
-#if defined(IS_CONTEXTFUL)
-bool Tree::traverseToLeafEx(const Key &k, OMCSLock::Context &q, N *&parentNode_out,
-                            uint32_t &level_out, bool &upgraded_out) {
-#else
-bool Tree::traverseToLeafEx(const Key &k, N *&parentNode_out, uint32_t &level_out,
-                            bool &upgraded_out) {
-#endif
+bool Tree::traverseToLeafEx(const Key &k, OMCSLock::Context *q, OMCSLock::Context *nq,
+                            bool &found_out, N *&parentNode_out, uint32_t &level_out,
+                            OMCSLock::Context *&q_out) {
 restart:
   bool needRestart = false;
 
   N *node;
   N *parentNode = nullptr;
-  uint64_t v;
   uint32_t level = 0;
   bool optimisticPrefixMatch = false;
-  bool lockAcquired = false;
+  bool exLockAcquired = false;
 
   node = root;
-  v = node->readLockOrRestart(needRestart);
+  READ_LOCK_NODE(node, q);
   if (needRestart) goto restart;
   while (true) {
     switch (checkPrefix(node, k, level)) {  // increases level
       case CheckPrefixResult::NoMatch:
-        node->readUnlockOrRestart(v, needRestart);
-        if (needRestart) goto restart;
-        return false;
+        READ_UNLOCK_NODE(node, q);
+        found_out = false;
+        return true;
       case CheckPrefixResult::OptimisticMatch:
         optimisticPrefixMatch = true;
         // fallthrough
       case CheckPrefixResult::Match:
         if (k.getKeyLen() <= level) {
-          node->readUnlockOrRestart(v, needRestart);
-          if (needRestart) goto restart;
-          return false;
+          READ_UNLOCK_NODE(node, q);
+          found_out = false;
+          return true;
         }
         parentNode = node;
         node = N::getChild(k[level], parentNode);
-        if (level < k.getKeyLen() - 1) {
-          parentNode->checkOrRestart(v, needRestart);
-          if (needRestart) goto restart;
-        }
 
         if (node == nullptr) {
-          if (lockAcquired) {
-            // nonexistent key
-            UNLOCK_NODE(parentNode);
+          // nonexistent key
+          if (exLockAcquired) {
+            UNLOCK_NODE(parentNode, q);
+          } else {
+            READ_UNLOCK_NODE(parentNode, q);
           }
-          return false;
+          found_out = false;
+          return true;
         }
         if (N::isLeaf(node)) {
           TID old_tid = N::getLeaf(node);
           if (level < k.getKeyLen() - 1 || optimisticPrefixMatch) {
             if (checkKey(old_tid, k) != old_tid) {
-              return false;
+              if (exLockAcquired) {
+                UNLOCK_NODE(parentNode, q);
+              } else {
+                READ_UNLOCK_NODE(parentNode, q);
+              }
+              found_out = false;
+              return true;
             }
           }
 
-          if (lockAcquired) {
+          if (exLockAcquired) {
             // Lock was already taken
+            found_out = true;
             parentNode_out = parentNode;
             level_out = level;
-            upgraded_out = false;
+            q_out = q;
             return true;
           }
 
-          UPGRADE_NODE(parentNode);
-          if (needRestart) goto restart;
-
-          parentNode_out = parentNode;
-          level_out = level;
-          upgraded_out = true;
-          return true;
+          // We want to upgrade the lock on parentNode from
+          // shared to exclusive, but since we cannot do that,
+          // we need to fall back to the pessimistic approach
+          READ_UNLOCK_NODE(parentNode, q);
+          return false;
         }
         level++;
     }
-    uint64_t nv = OMCSLock::kInvalidVersion;
     if (level == k.getKeyLen() - 1) {
-      // XXX(shiges): hack, only works for monotonic, dense int keys
       // [node] is at the last level of the ART that corresponds to an ART_OLC::N
       // I should lock [node] exclusively
-      LOCK_NODE(node);
-      lockAcquired = true;
+      LOCK_NODE(node, nq);
+      exLockAcquired = true;
     } else {
-      nv = node->readLockOrRestart(needRestart);
+      READ_LOCK_NODE(node, nq);
     }
     if (needRestart) {
-      if (lockAcquired) {
-        UNLOCK_NODE(node);
-      }
+      READ_UNLOCK_NODE(parentNode, q);
       goto restart;
     }
 
-    parentNode->readUnlockOrRestart(v, needRestart);
-    if (needRestart) {
-      if (lockAcquired) {
-        UNLOCK_NODE(node);
-      }
-      goto restart;
-    }
-    v = nv;
+    READ_UNLOCK_NODE(parentNode, q);
+    std::swap(q, nq);
   }
 }
 
-#if defined(IS_CONTEXTFUL)
-bool Tree::traverseToLeafAcquireEx(const Key &k, OMCSLock::Context qnodes[], N *&parentNode_out,
-                                   uint32_t &level_out, OMCSLock::Context *&q_out) {
-#else
-bool Tree::traverseToLeafAcquireEx(const Key &k, N *&parentNode_out, uint32_t &level_out) {
-#endif
+bool Tree::traverseToLeafPessimisticEx(const Key &k, OMCSLock::Context *q, OMCSLock::Context *nq,
+                                       N *&parentNode_out, uint32_t &level_out,
+                                       OMCSLock::Context *&q_out) {
 restart:
   bool needRestart = false;
 
   N *node;
   N *parentNode = nullptr;
-  N *gpNode = nullptr;
-  uint64_t v;
-  uint64_t pv;
   uint32_t level = 0;
   bool optimisticPrefixMatch = false;
 
   node = root;
-  bool isLocked = node->isLocked();
-#if defined(IS_CONTEXTFUL)
-  OMCSLock::Context *q = &qnodes[0];
-  OMCSLock::Context *nq = &qnodes[1];
-#endif
-  if (isLocked) {
-    // Lock it anyway...
-#if defined(IS_CONTEXTFUL)
-    node->writeLockOrRestart(q, needRestart);
-#else
-    node->writeLockOrRestart(needRestart);
-#endif
-  } else {
-    v = node->readLockOrRestart(needRestart);
-  }
+  LOCK_NODE(node, q);
   if (needRestart) goto restart;
   while (true) {
     switch (checkPrefix(node, k, level)) {  // increases level
       case CheckPrefixResult::NoMatch:
-        if (isLocked) {
-#if defined(IS_CONTEXTFUL)
-          node->writeUnlock(q);
-#else
-          node->writeUnlock();
-#endif
-        } else {
-          node->readUnlockOrRestart(v, needRestart);
-        }
-        if (needRestart) goto restart;
+        UNLOCK_NODE(node, q);
         return false;
       case CheckPrefixResult::OptimisticMatch:
         optimisticPrefixMatch = true;
         // fallthrough
       case CheckPrefixResult::Match:
         if (k.getKeyLen() <= level) {
-          if (isLocked) {
-#if defined(IS_CONTEXTFUL)
-            node->writeUnlock(q);
-#else
-            node->writeUnlock();
-#endif
-          } else {
-            node->readUnlockOrRestart(v, needRestart);
-          }
-          if (needRestart) goto restart;
+          UNLOCK_NODE(node, q);
           return false;
         }
-        gpNode = parentNode;
         parentNode = node;
         node = N::getChild(k[level], parentNode);
-        if (!isLocked) {
-          parentNode->checkOrRestart(v, needRestart);
-          if (needRestart) goto restart;
-        }
 
         if (node == nullptr) {
-          if (isLocked) {
-#if defined(IS_CONTEXTFUL)
-            parentNode->writeUnlock(q);
-#else
-            parentNode->writeUnlock();
-#endif
-          }
+          UNLOCK_NODE(parentNode, q);
           return false;
         }
         if (N::isLeaf(node)) {
           TID old_tid = N::getLeaf(node);
           if (level < k.getKeyLen() - 1 || optimisticPrefixMatch) {
             if (checkKey(old_tid, k) != old_tid) {
+              UNLOCK_NODE(parentNode, q);
               return false;
             }
           }
 
-          if (!isLocked) {
-#if defined(IS_CONTEXTFUL)
-            parentNode->writeLockOrRestart(q, needRestart);
-#else
-            parentNode->writeLockOrRestart(needRestart);
-#endif
-            if (needRestart) goto restart;
-          }
-          assert(parentNode->isLocked());
-
-          if (!isLocked && gpNode) {
-            gpNode->checkOrRestart(pv, needRestart);
-            if (needRestart) {
-              // The link gpNode -> parentNode might change. Just
-              // restart from top. This does not seem to be a problem
-              // for root though, since it never changes.
-#if defined(IS_CONTEXTFUL)
-              parentNode->writeUnlock(q);
-#else
-              parentNode->writeUnlock();
-#endif
-              goto restart;
-            }
-          }
-
-          N *leaf = N::getChild(k[level], parentNode);
-          if (!N::isLeaf(leaf)) {
-            // FIXME(shiges): I raced with an SMO. I should keep my new
-            // TID there, but I am not sure how ART handles for example
-            // concurrent insertions of "ab" and "abc". So far our workloads
-            // doesn't trigger this.
-#if defined(IS_CONTEXTFUL)
-            parentNode->writeUnlock(q);
-#else
-            parentNode->writeUnlock();
-#endif
-            goto restart;
-          }
-
-          // Now [leaf] might be or might not be the same as [node],
-          // but we don't care.
-
           parentNode_out = parentNode;
           level_out = level;
-#if defined(IS_CONTEXTFUL)
           q_out = q;
-#endif
           return true;
         }
         level++;
     }
-    uint64_t nv = OMCSLock::kInvalidVersion;
-    bool isParentLocked = isLocked;
-    isLocked = node->isLocked();
-    if (isLocked) {
-#if defined(IS_CONTEXTFUL)
-      node->writeLockOrRestart(nq, needRestart);
-#else
-      node->writeLockOrRestart(needRestart);
-#endif
-    } else {
-      nv = node->readLockOrRestart(needRestart);
+    LOCK_NODE(node, nq);
+    if (needRestart) {
+      UNLOCK_NODE(parentNode, q);
+      goto restart;
     }
-    if (needRestart) goto restart;
 
-    if (isParentLocked) {
-#if defined(IS_CONTEXTFUL)
-      parentNode->writeUnlock(q);
-#else
-      parentNode->writeUnlock();
-#endif
-    } else {
-      parentNode->readUnlockOrRestart(v, needRestart);
-    }
-    if (needRestart) goto restart;
-    pv = v;
-    v = nv;
-#if defined(IS_CONTEXTFUL)
+    UNLOCK_NODE(parentNode, q);
     std::swap(q, nq);
-#endif
   }
 }
 
@@ -920,47 +805,40 @@ expand:
   }
 }
 
+bool Tree::insert(const Key &k, TID tid) { return insertPessimistic(k, tid); }
+
 bool Tree::update(const Key &k, TID new_tid) {
-#if defined(IS_CONTEXTFUL) && defined(ART_OLC_ACQUIRE)
-  OMCSLock::Context qnodes[2], *q = nullptr;
-#else
-  DEFINE_CONTEXT(q, 0);
-#endif
+  DEFINE_CONTEXT(q0, 0);
+  DEFINE_CONTEXT(q1, 1);
+  OMCSLock::Context *q = nullptr;
+
+  bool found = false;
   N *parentNode = nullptr;
   uint32_t level = 0;
-  bool upgraded = false;
-#if defined(ART_OLC_ACQUIRE)
-#if defined(IS_CONTEXTFUL)
-  if (!traverseToLeafAcquireEx(k, qnodes, parentNode, level, q)) {
-#else
-  if (!traverseToLeafAcquireEx(k, parentNode, level)) {
-#endif
-#else
-#if defined(IS_CONTEXTFUL)
-  if (!traverseToLeafEx(k, q, parentNode, level, upgraded)) {
-#else
-  if (!traverseToLeafEx(k, parentNode, level, upgraded)) {
-#endif
-#endif
+  bool shouldExpand = false;
+
+  if (!traverseToLeafEx(k, &q0, &q1, found, parentNode, level, q)) {
+    shouldExpand = true;
+    found = traverseToLeafPessimisticEx(k, &q0, &q1, parentNode, level, q);
+  }
+  if (!found) {
     return false;
   }
-
   N *tid = N::setLeaf(new_tid);
   N::change(parentNode, k[level], tid);
 
-  if (upgraded) {
+  if (shouldExpand) {
     tryExpand(k, parentNode, level, tid);
   }
 
-#if defined(IS_CONTEXTFUL) && defined(ART_OLC_ACQUIRE)
-  parentNode->writeUnlock(q);
-#else
-  UNLOCK_NODE(parentNode);
-#endif
+  UNLOCK_NODE(parentNode, q);
   return true;
 }
 
 bool Tree::remove(const Key &k, TID tid) {
+  LOG(FATAL) << "Not supported";
+  return false;
+#if 0
 restart:
   bool needRestart = false;
 
@@ -1070,6 +948,7 @@ restart:
       }
     }
   }
+#endif
 }
 
 inline typename Tree::CheckPrefixResult Tree::checkPrefix(N *n, const Key &k, uint32_t &level) {
@@ -1092,11 +971,9 @@ inline typename Tree::CheckPrefixResult Tree::checkPrefix(N *n, const Key &k, ui
 }
 
 typename Tree::CheckPrefixPessimisticResult Tree::checkPrefixPessimistic(
-    N *n, uint64_t v, const Key &k, uint32_t &level, uint8_t &nonMatchingKey,
-    Prefix &nonMatchingPrefix, LoadKeyFunction loadKey, bool &needRestart) {
+    N *n, const Key &k, uint32_t &level, uint8_t &nonMatchingKey, Prefix &nonMatchingPrefix,
+    LoadKeyFunction loadKey, bool &needRestart) {
   uint32_t prefixLen = n->getPrefixLength();
-  n->checkOrRestart(v, needRestart);
-  if (needRestart) return CheckPrefixPessimisticResult::Match;
 
   if (prefixLen) {
     uint32_t prevLevel = level;
@@ -1129,7 +1006,7 @@ typename Tree::CheckPrefixPessimisticResult Tree::checkPrefixPessimistic(
   return CheckPrefixPessimisticResult::Match;
 }
 
-typename Tree::PCCompareResults Tree::checkPrefixCompare(const N *n, const Key &k, uint8_t fillKey,
+typename Tree::PCCompareResults Tree::checkPrefixCompare(N *n, const Key &k, uint8_t fillKey,
                                                          uint32_t &level, LoadKeyFunction loadKey,
                                                          bool &needRestart) {
   if (n->hasPrefix()) {
@@ -1154,9 +1031,9 @@ typename Tree::PCCompareResults Tree::checkPrefixCompare(const N *n, const Key &
   return PCCompareResults::Equal;
 }
 
-typename Tree::PCEqualsResults Tree::checkPrefixEquals(const N *n, uint32_t &level,
-                                                       const Key &start, const Key &end,
-                                                       LoadKeyFunction loadKey, bool &needRestart) {
+typename Tree::PCEqualsResults Tree::checkPrefixEquals(N *n, uint32_t &level, const Key &start,
+                                                       const Key &end, LoadKeyFunction loadKey,
+                                                       bool &needRestart) {
   if (n->hasPrefix()) {
     Key kt;
     for (uint32_t i = 0; i < n->getPrefixLength(); ++i) {
