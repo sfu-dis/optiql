@@ -20,37 +20,33 @@ NUM_SOCKETS = 2
 NUM_CORES = 20
 
 indexes = ['btreeolc_upgrade',
-           'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-           'btreeomcs_leaf_op_read_new_api',
-           'btreeomcs_leaf_op_read_new_api_baseline',
-           'btreeomcs_leaf_op_read_callback',
-           'btreeomcs_leaf_op_read_callback_baseline',
-           'btreelc_stdrw',
-           'btreelc_mcsrw_cwp',
-           'btreelc_mcsrw_crp',
-           'btreelc_crw_cwp',
-           'btreelc_crw_crp',
-           'artolc_upgrade',
-           'artomcs_offset', 'artomcs_op_read']
-labels = ['B+Tree OptLock-NB',
-          'B+Tree OMCS', 'B+Tree OMCS+OpRead',
-          'B+Tree OptiQL NewAPI',
-          'B+Tree OptiQL NewAPI Baseline',
-          'B+Tree OptiQL Callback',
-          'B+Tree OptiQL Callback Baseline',
-          'B+Tree STDRW',
-          'B+Tree MCSRW CWP',
+          'btreeomcs_leaf_offset',
+          'btreeomcs_leaf_op_read',
+          'btreelc_mcsrw_crp',
+          'btreelc_stdrw',
+          'artolc_upgrade',
+          'artomcs_offset',
+          'artomcs_op_read',
+          'artlc_mcsrw_crp',
+          'artlc_stdrw',
+]
+labels = ['B+Tree OptLock',
+          'B+Tree OptiQL-NOR',
+          'B+Tree OptiQL',
           'B+Tree MCSRW CRP',
-          'B+Tree CRW CWP',
-          'B+Tree CRW CRP',
-          'ART OptLock-NB',
-          'ART OMCS', 'ART OMCS+OpRead']
+          'B+Tree STDRW',
+          'ART OptLock',
+          'ART OptiQL-NOR',
+          'ART OptiQL',
+          'ART MCSRW CRP',
+          'ART STDRW',
+]
+
 btree_indexes = [index for index in indexes if 'btree' in index]
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'New API', 'New API-Baseline',
-                'Callback', 'Callback-Baseline', 'std', 'MCS-RW-CWP', 'MCS-RW-CRP']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'CRP-MCSRW', 'std']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]

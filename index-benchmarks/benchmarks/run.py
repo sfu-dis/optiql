@@ -128,31 +128,27 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
     experiments = []
 
     indexes = ['btreeolc_upgrade',
-               'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-               'btreeomcs_leaf_op_read_new_api',
-               'btreeomcs_leaf_op_read_new_api_baseline',
-               'btreeomcs_leaf_op_read_callback',
-               'btreeomcs_leaf_op_read_callback_baseline',
-               'btreelc_stdrw',
-               'btreelc_mcsrw_cwp',
+               'btreeomcs_leaf_offset',
+               'btreeomcs_leaf_op_read',
                'btreelc_mcsrw_crp',
-               'btreelc_crw_cwp',
-               'btreelc_crw_crp',
+               'btreelc_stdrw',
                'artolc_upgrade',
-               'artomcs_offset', 'artomcs_op_read']
+               'artomcs_offset',
+               'artomcs_op_read',
+               'artlc_mcsrw_crp',
+               'artlc_stdrw',
+    ]
     labels = ['B+Tree OptLock',
-              'B+Tree OptiQL--', 'B+Tree OptiQL',
-              'B+Tree OptiQL NewAPI',
-              'B+Tree OptiQL NewAPI Baseline',
-              'B+Tree OptiQL Callback',
-              'B+Tree OptiQL Callback Baseline',
-              'B+Tree STDRW',
-              'B+Tree MCSRW CWP',
+              'B+Tree OptiQL-NOR',
+              'B+Tree OptiQL',
               'B+Tree MCSRW CRP',
-              'B+Tree CRW CWP',
-              'B+Tree CRW CRP',
+              'B+Tree STDRW',
               'ART OptLock',
-              'ART OptiQL--', 'ART OptiQL']
+              'ART OptiQL-NOR',
+              'ART OptiQL',
+              'ART MCSRW CRP',
+              'ART STDRW',
+    ]
     btree_indexes = [index for index in indexes if 'btree' in index]
     art_indexes = [index for index in indexes if 'art' in index]
     btree_labels = [label for label in labels if 'B+Tree' in label]
