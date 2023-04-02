@@ -4,7 +4,7 @@
 
 #ifdef OMCS_LOCK
 #include "indexes/ARTOLC/Tree.h"
-#elif defined(MCSRW_LOCK)
+#elif defined(MCSRW_LOCK) || defined(STDRW_LOCK)
 #include "indexes/ARTLC/Tree.h"
 #endif
 #include "latches/OMCSOffset.h"

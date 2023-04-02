@@ -6,6 +6,7 @@
 #define ART_OPTIMISTIC_LOCK_COUPLING_N_H
 // #define ART_NOREADLOCK
 // #define ART_NOWRITELOCK
+#include <glog/logging.h>
 #include <stdint.h>
 #include <string.h>
 
