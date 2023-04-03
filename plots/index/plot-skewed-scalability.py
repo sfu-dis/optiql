@@ -23,28 +23,24 @@ indexes = ['btreeolc_upgrade',
           'btreeomcs_leaf_offset',
           'btreeomcs_leaf_op_read',
           'btreelc_mcsrw_crp',
-          'btreelc_crw_crp',
           'btreelc_stdrw',
           'btreeolc_mcsrw_hybrid',
           'artolc_upgrade',
           'artomcs_offset',
           'artomcs_op_read',
           'artlc_mcsrw_crp',
-          'artlc_crw_crp',
           'artlc_stdrw',
 ]
 labels = ['B+Tree OptLock',
           'B+Tree OptiQL-NOR',
           'B+Tree OptiQL',
           'B+Tree MCSRW CRP',
-          'B+Tree CRW CRP',
           'B+Tree STDRW',
           'B+Tree OptLock-MCSRW',
           'ART OptLock',
           'ART OptiQL-NOR',
           'ART OptiQL',
           'ART MCSRW CRP',
-          'ART CRW CRP',
           'ART STDRW',
 ]
 
@@ -52,7 +48,7 @@ btree_indexes = [index for index in indexes if 'btree' in index]
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'CRP-MCSRW', 'CRP', 'std', 'OptLock-MCSRW']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'CRP-MCSRW', 'std', 'OptLock-MCSRW']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]

@@ -51,6 +51,8 @@ class PiBenchExperiment:
     def run(self, ith, idx, total):
         commands = [*self.numactl, PiBenchExperiment.pibench_bin,
                     self.wrapper_bin, *self.pibench_args]
+        if 'stdrw' in self.index:
+            commands.append('--bulk_load')
         print(f'Executing ({idx}/{total}):', ' '.join(commands))
         result_text = None
         skipped = False
@@ -131,28 +133,24 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
                'btreeomcs_leaf_offset',
                'btreeomcs_leaf_op_read',
                'btreelc_mcsrw_crp',
-               'btreelc_crw_crp',
                'btreelc_stdrw',
                'btreeolc_mcsrw_hybrid',
                'artolc_upgrade',
                'artomcs_offset',
                'artomcs_op_read',
                'artlc_mcsrw_crp',
-               'artlc_crw_crp',
                'artlc_stdrw',
     ]
     labels = ['B+Tree OptLock',
               'B+Tree OptiQL-NOR',
               'B+Tree OptiQL',
               'B+Tree MCSRW CRP',
-              'B+Tree CRW CRP',
               'B+Tree STDRW',
               'B+Tree OptLock-MCSRW',
               'ART OptLock',
               'ART OptiQL-NOR',
               'ART OptiQL',
               'ART MCSRW CRP',
-              'ART CRW CRP',
               'ART STDRW',
     ]
     btree_indexes = [index for index in indexes if 'btree' in index]
