@@ -17,6 +17,8 @@ namespace mcsrw {
 
 #if defined(RWLOCK_WRITER_PREFERENCE)
 #elif defined(RWLOCK_READER_PREFERENCE)
+#elif defined(OPT_MCSRW_HYBRID_LOCK)
+// No need to implement centralized rwlock
 #else
 static_assert(false, "Centralized rwlock has no implementation");
 #endif
@@ -194,6 +196,8 @@ class MCSRWLock {
         return;
       }
     }
+#else
+    LOG(FATAL) << "Not implemented";
 #endif
   }
 
@@ -203,6 +207,8 @@ class MCSRWLock {
     write_completions_.fetch_add(1);
 #elif defined(RWLOCK_READER_PREFERENCE)
     reader_count_and_flag_.fetch_sub(kWriterActiveFlag);
+#else
+    LOG(FATAL) << "Not implemented";
 #endif
   }
 
@@ -222,6 +228,8 @@ class MCSRWLock {
     reader_count_and_flag_.fetch_add(kReaderCountIncr);
     while (reader_count_and_flag_.load(std::memory_order_acquire) & kWriterActiveFlag) {
     }
+#else
+    LOG(FATAL) << "Not implemented";
 #endif
   }
 
@@ -230,6 +238,8 @@ class MCSRWLock {
     reader_count_and_flag_.fetch_sub(kReaderCountIncr);
 #elif defined(RWLOCK_READER_PREFERENCE)
     reader_count_and_flag_.fetch_sub(kReaderCountIncr);
+#else
+    LOG(FATAL) << "Not implemented";
 #endif
   }
 

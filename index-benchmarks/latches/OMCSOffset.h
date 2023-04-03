@@ -6,7 +6,7 @@
 
 #if defined(OMCS_LOCK)
 #include "OMCSImpl.h"
-#elif defined(MCSRW_LOCK)
+#elif defined(MCSRW_LOCK) || defined(OPT_MCSRW_HYBRID_LOCK)
 #include "MCSRW.h"
 #endif
 
@@ -19,7 +19,7 @@ using QNode = omcs_impl::OMCSQNode;
 namespace omcs_impl {
 inline OMCSQNode *base_qnode = nullptr;
 }  // namespace omcs_impl
-#elif defined(MCSRW_LOCK)
+#elif defined(MCSRW_LOCK) || defined(OPT_MCSRW_HYBRID_LOCK)
 namespace offset {
 using Lock = mcsrw::MCSRWLock;
 using QNode = mcsrw::MCSRWQNode;
@@ -34,7 +34,7 @@ namespace offset {
 #ifdef OMCS_OFFSET
 #if defined(OMCS_LOCK)
 using omcs_impl::base_qnode;
-#elif defined(MCSRW_LOCK)
+#elif defined(MCSRW_LOCK) || defined(OPT_MCSRW_HYBRID_LOCK)
 using mcsrw::base_qnode;
 #endif
 #ifdef OMCS_OFFSET_NUMA_QNODE

@@ -151,6 +151,13 @@ foreach(page_size page_size_suffix IN ZIP_LISTS page_sizes page_size_suffixes)
     LIBRARIES numa
   )
 
+  add_wrapper(
+    NAME btreeolc_mcsrw_hybrid${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OPT_MCSRW_HYBRID_LOCK OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_OLC_HYBRID BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
+
 endforeach()
 
 # ART
