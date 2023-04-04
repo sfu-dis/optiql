@@ -232,17 +232,10 @@ add_wrapper(
 )
 
 add_wrapper(
-  NAME artlc_mcsrw_cwp
+  NAME artlc_mcsrw
   SOURCE artolc_wrapper.cpp
-  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_WRITER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
-  LIBRARIES artlc_mcsrw_cwp tbb numa
-)
-
-add_wrapper(
-  NAME artlc_mcsrw_crp
-  SOURCE artolc_wrapper.cpp
-  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
-  LIBRARIES artlc_mcsrw_crp tbb numa
+  DEFINITIONS RWLOCK MCSRW_LOCK MCSRW_LOCK_ONLY IS_CONTEXTFUL OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+  LIBRARIES artlc_mcsrw tbb numa
 )
 
 add_wrapper(

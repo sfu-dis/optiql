@@ -15,13 +15,8 @@ add_libart(
 )
 
 add_libart(
-  NAME artlc_mcsrw_cwp
-  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_WRITER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
-)
-
-add_libart(
-  NAME artlc_mcsrw_crp
-  DEFINITIONS RWLOCK MCSRW_LOCK IS_CONTEXTFUL RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
+  NAME artlc_mcsrw
+  DEFINITIONS RWLOCK MCSRW_LOCK MCSRW_LOCK_ONLY IS_CONTEXTFUL OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
 )
 
 add_libart(
@@ -34,5 +29,5 @@ add_libart(
   DEFINITIONS RWLOCK MCSRW_LOCK MCSRW_LOCK_CENTRALIZED RWLOCK_READER_PREFERENCE OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
 )
 
-add_executable(artlc_mcsrw_crp_example example.cpp)
-target_link_libraries(artlc_mcsrw_crp_example artlc_mcsrw_crp tbb)
+add_executable(artlc_mcsrw_example example.cpp)
+target_link_libraries(artlc_mcsrw_example artlc_mcsrw tbb)
