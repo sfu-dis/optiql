@@ -18,6 +18,9 @@ using BTree = btreeolc::BTreeOMCS<uint64_t, uint64_t>;
 #elif defined(BTREE_RWLOCK)
 #include "indexes/BTreeOLC/BTreeLC.h"
 using BTree = btreeolc::BTreeLC<uint64_t, uint64_t>;
+#elif defined(BTREE_RWLOCK_MCSRW_ONLY)
+#include "indexes/BTreeOLC/BTreeLCMCSRWOnly.h"
+using BTree = btreeolc::BTreeLC<uint64_t, uint64_t>;
 #elif defined(BTREE_OLC_HYBRID)
 #include "indexes/BTreeOLC/BTreeOLCHybrid.h"
 using BTree = btreeolc::BTreeOLCHybrid<uint64_t, uint64_t>;

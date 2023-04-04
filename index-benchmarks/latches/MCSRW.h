@@ -17,7 +17,7 @@ namespace mcsrw {
 
 #if defined(RWLOCK_WRITER_PREFERENCE)
 #elif defined(RWLOCK_READER_PREFERENCE)
-#elif defined(OPT_MCSRW_HYBRID_LOCK)
+#elif defined(OPT_MCSRW_HYBRID_LOCK) || defined(MCSRW_LOCK_ONLY)
 // No need to implement centralized rwlock
 #else
 static_assert(false, "Centralized rwlock has no implementation");

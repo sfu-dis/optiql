@@ -9,14 +9,12 @@
 #include "BTreeCommon.h"
 #include "latches/OMCSOffset.h"
 
-// This implementation uses MCSRW only on leaf nodes.
-// For inner nodes, centralized RW locks are used.
+// This implementation uses MCSRW everywhere.
 
-#if defined(OMCS_OFFSET)
-#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *offset::get_qnode(i)
-#else
-#define DEFINE_CONTEXT(q, i) OMCSLock::Context q
+#if not defined(OMCS_OFFSET)
+static_assert(false, "OMCS_OFFSET must be defined for BTreeLCMCSRWOnly");
 #endif
+#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *offset::get_qnode(i)
 
 namespace btreeolc {
 template <class Key, class Value>
