@@ -26,6 +26,8 @@ struct BTreeLC : public BTreeBase<Key, Value> {
   // FIXME(shiges): support scan in BTreeLC
   using BTreeBase<Key, Value>::scan;
 
+  enum LockType { Sh, Ex };
+
   BTreeLC() {
     std::cout << "========================================" << std::endl;
     std::cout << "BTree with lock coupling." << std::endl;
@@ -169,7 +171,8 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     }
   }
 
-  bool traverseToLeafSh(Key k, OMCSLock::Context &q, NodeBase *&node) {
+  template <LockType ty>
+  bool traverseToLeaf(Key k, OMCSLock::Context &q, NodeBase *&node) {
     int restartCount = 0;
   restart:
     if (restartCount++) yield(restartCount);
@@ -177,9 +180,17 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     node = root;
     if (node->getType() == PageType::BTreeLeaf) {
       // The root node is a leaf node.
-      node->readLock(&q);
+      if constexpr (ty == Sh) {
+        node->readLock(&q);
+      } else {
+        node->writeLock(&q);
+      }
       if (node != root) {
-        node->readUnlock(&q);
+        if constexpr (ty == Sh) {
+          node->readUnlock(&q);
+        } else {
+          node->writeUnlock(&q);
+        }
         goto restart;
       }
       return true;
@@ -199,64 +210,26 @@ struct BTreeLC : public BTreeBase<Key, Value> {
         // [next] is an inner node
         next->readLock();
       } else {
-        // [next] is a leaf node, take shared latch with context
-        next->readLock(&q);
+        // [next] is a leaf node, just take (shared or exclusive) latch
+        if constexpr (ty == Sh) {
+          next->readLock(&q);
+        } else {
+          next->writeLock(&q);
+        }
       }
       node->readUnlock();
 
       node = next;
     }
 
-    // We now have shared latch on [node]
-    return true;
-  }
-
-  bool traverseToLeafEx(Key k, OMCSLock::Context &q, NodeBase *&node) {
-    int restartCount = 0;
-  restart:
-    if (restartCount++) yield(restartCount);
-
-    node = root;
-    if (node->getType() == PageType::BTreeLeaf) {
-      // The root node is a leaf node.
-      node->writeLock(&q);
-      if (node != root) {
-        node->writeUnlock(&q);
-        goto restart;
-      }
-      return true;
-    }
-    node->readLock();
-    if (node != root) {
-      node->readUnlock();
-      goto restart;
-    }
-
-    while (node->getType() == PageType::BTreeInner) {
-      auto inner = static_cast<BTreeInner<Key> *>(node);
-
-      NodeBase *next = inner->children[inner->lowerBound(k)];
-
-      if (next->getType() == PageType::BTreeInner) {
-        // [next] is an inner node
-        next->readLock();
-      } else {
-        // [next] is a leaf node, just take exclusive latch
-        next->writeLock(&q);
-      }
-      node->readUnlock();
-
-      node = next;
-    }
-
-    // We now have exclusive latch on [node]
+    // We now have a latch on [node]
     return true;
   }
 
   bool lookup(Key k, Value &result) {
     NodeBase *node = nullptr;
     DEFINE_CONTEXT(q, 0);
-    traverseToLeafSh(k, q, node);
+    traverseToLeaf<Sh>(k, q, node);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     unsigned pos = leaf->lowerBound(k);
     bool success = false;
@@ -276,7 +249,7 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     }
     NodeBase *node = nullptr;
     DEFINE_CONTEXT(q, 0);
-    traverseToLeafEx(k, q, node);
+    traverseToLeaf<Ex>(k, q, node);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     if (leaf->isFull()) {
       // We have bad luck. Unlock [node] and retry the entire traversal,
@@ -293,7 +266,7 @@ struct BTreeLC : public BTreeBase<Key, Value> {
   bool remove(Key k) {
     NodeBase *node = nullptr;
     DEFINE_CONTEXT(q, 0);
-    traverseToLeafEx(k, q, node);
+    traverseToLeaf<Ex>(k, q, node);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     bool ok = leaf->remove(k);
     node->writeUnlock(&q);
@@ -303,7 +276,7 @@ struct BTreeLC : public BTreeBase<Key, Value> {
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
     DEFINE_CONTEXT(q, 0);
-    traverseToLeafEx(k, q, node);
+    traverseToLeaf<Ex>(k, q, node);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     bool ok = leaf->update(k, v);
     node->writeUnlock(&q);
