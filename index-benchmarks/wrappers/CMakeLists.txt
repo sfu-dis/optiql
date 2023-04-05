@@ -254,3 +254,13 @@ add_wrapper(
 
 add_executable(wrapper_tests wrapper_tests.cpp)
 target_link_libraries(wrapper_tests gtest btreeolc_wrapper pthread)
+
+# Bw-Tree
+add_wrapper(
+  NAME bwtree
+  SOURCE bwtree_wrapper.cpp
+  LIBRARIES bwtree
+)
+
+add_executable(bwtree_wrapper_tests bwtree_wrapper_tests.cpp)
+target_link_libraries(bwtree_wrapper_tests gtest bwtree_wrapper pthread)

@@ -44,3 +44,4 @@ release
 __pycache__
 
 plots/index/data
+!CMakeLists.txt
