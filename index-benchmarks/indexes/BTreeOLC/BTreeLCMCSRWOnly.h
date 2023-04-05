@@ -14,7 +14,8 @@
 #if not defined(OMCS_OFFSET)
 static_assert(false, "OMCS_OFFSET must be defined for BTreeLCMCSRWOnly");
 #endif
-#define DEFINE_CONTEXT(q, i) OMCSLock::Context &q = *offset::get_qnode(i)
+#define DEFINE_CONTEXT(q, i) OMCSLock::Context *q = offset::get_qnode(i)
+#define GET_CONTEXT(i) offset::get_qnode(i)
 
 namespace btreeolc {
 template <class Key, class Value>
@@ -40,23 +41,40 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     root = new BTreeLeaf<Key, Value>();
   }
 
+  struct UnsafeTlsContextAllocator {
+   private:
+    size_t free_list_size_ = 0;
+    uint64_t next_id_ = 0;
+    uint64_t free_list_[kMaxLevels];
+
+   public:
+    uint64_t allocate() {
+      if (free_list_size_) {
+        return free_list_[--free_list_size_];
+      }
+      return next_id_++;
+    }
+
+    void free(uint64_t id) { free_list_[free_list_size_++] = id; }
+  };
+
   struct UnsafeNodeStack {
     // When used in pessimistic top-down insertion, the stack holds references
     // to exclusively latched nodes.
    private:
-    NodeBase *nodes[kMaxLevels];
+    std::pair<NodeBase *, uint64_t> nodes[kMaxLevels];
     size_t top = 0;
 
    public:
-    void Push(NodeBase *node) {
+    void Push(NodeBase *node, uint64_t version) {
       assert(top < kMaxLevels);
-      nodes[top++] = node;
+      nodes[top++] = {node, version};
     }
-    NodeBase *Pop() {
+    std::pair<NodeBase *, uint64_t> Pop() {
       assert(top > 0);
       return nodes[--top];
     }
-    NodeBase *Top() const {
+    std::pair<NodeBase *, uint64_t> Top() const {
       assert(top > 0);
       return nodes[top - 1];
     }
@@ -68,21 +86,15 @@ struct BTreeLC : public BTreeBase<Key, Value> {
   restart:
     if (restartCount++) yield(restartCount);
 
-    DEFINE_CONTEXT(q, 0);
+    UnsafeTlsContextAllocator qnode_allocator;
     UnsafeNodeStack latched_nodes;
     NodeBase *node = root;
-    if (node->getType() == PageType::BTreeInner) {
-      node->writeLock();
-    } else {
-      node->writeLock(&q);
-    }
-    latched_nodes.Push(node);
+    uint64_t i = qnode_allocator.allocate();
+    OMCSLock::Context *q = GET_CONTEXT(i);
+    node->writeLock(q);
+    latched_nodes.Push(node, i);
     if (node != root) {
-      if (node->getType() == PageType::BTreeInner) {
-        node->writeUnlock();
-      } else {
-        node->writeUnlock(&q);
-      }
+      node->writeUnlock(q);
       goto restart;
     }
 
@@ -94,16 +106,17 @@ struct BTreeLC : public BTreeBase<Key, Value> {
       // if [next] is not full, release all held exclusive latches
       // on its ancestors
       bool release_ancestors = false;
+      uint64_t j = qnode_allocator.allocate();
+      OMCSLock::Context *nq = GET_CONTEXT(j);
+      next->writeLock(nq);
       if (next->getType() == PageType::BTreeInner) {
         // [next] is an inner node
-        next->writeLock();
         auto next_inner = static_cast<BTreeInner<Key> *>(next);
         if (!next_inner->isFull()) {
           release_ancestors = true;
         }
       } else {
         // [next] is a leaf node
-        next->writeLock(&q);
         auto next_leaf = static_cast<BTreeLeaf<Key, Value> *>(next);
         if (!next_leaf->isFull()) {
           release_ancestors = true;
@@ -112,11 +125,13 @@ struct BTreeLC : public BTreeBase<Key, Value> {
 
       if (release_ancestors) {
         while (latched_nodes.Size() > 0) {
-          auto n = latched_nodes.Pop();
-          n->writeUnlock();
+          auto [n, i] = latched_nodes.Pop();
+          OMCSLock::Context *q = GET_CONTEXT(i);
+          n->writeUnlock(q);
+          qnode_allocator.free(i);
         }
       }
-      latched_nodes.Push(next);
+      latched_nodes.Push(next, j);
 
       node = next;
     }
@@ -124,8 +139,10 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     if (leaf->isFull()) {
       // handle splits
-      assert(leaf == latched_nodes.Top());
-      latched_nodes.Pop();
+      assert(leaf == latched_nodes.Top().first);
+      auto [n, i] = latched_nodes.Pop();
+      assert(n == leaf);
+      OMCSLock::Context *q = GET_CONTEXT(i);
       Key sep;
       bool ok = leaf->insert(k, v);
       NodeBase *newNode = leaf->split(sep);
@@ -133,21 +150,23 @@ struct BTreeLC : public BTreeBase<Key, Value> {
         // [leaf] has to be root
         assert(root == leaf);
         makeRoot(sep, leaf, newNode);
-        node->writeUnlock(&q);
+        node->writeUnlock(q);
       } else {
         // [leaf] has a parent
-        node->writeUnlock(&q);
+        node->writeUnlock(q);
         while (latched_nodes.Size() > 1) {
-          auto n = latched_nodes.Pop();
+          auto [n, i] = latched_nodes.Pop();
           assert(n->getType() == PageType::BTreeInner);
+          OMCSLock::Context *q = GET_CONTEXT(i);
           auto parent = static_cast<BTreeInner<Key> *>(n);
           parent->insert(sep, newNode);
           newNode = parent->split(sep);
-          n->writeUnlock();
+          n->writeUnlock(q);
         }
         assert(latched_nodes.Size() == 1);
-        auto n = latched_nodes.Pop();
+        auto [n, i] = latched_nodes.Pop();
         assert(n->getType() == PageType::BTreeInner);
+        OMCSLock::Context *q = GET_CONTEXT(i);
         auto parent = static_cast<BTreeInner<Key> *>(n);
         if (parent->isFull()) {
           assert(root == n);
@@ -158,20 +177,24 @@ struct BTreeLC : public BTreeBase<Key, Value> {
           // We have finally found some space
           parent->insert(sep, newNode);
         }
-        n->writeUnlock();
+        n->writeUnlock(q);
       }
       return ok;
     } else {
       // no need to split, just insert into [leaf]
       assert(latched_nodes.Size() == 1);
+      auto [n, i] = latched_nodes.Pop();
+      assert(n == node);
+      OMCSLock::Context *q = GET_CONTEXT(i);
       bool ok = leaf->insert(k, v);
-      node->writeUnlock(&q);
+      node->writeUnlock(q);
       return ok;
     }
   }
 
   template <LockType ty>
-  bool traverseToLeaf(Key k, OMCSLock::Context &q, NodeBase *&node) {
+  bool traverseToLeaf(Key k, OMCSLock::Context *q, OMCSLock::Context *nq, NodeBase *&node,
+                      OMCSLock::Context *&q_out) {
     int restartCount = 0;
   restart:
     if (restartCount++) yield(restartCount);
@@ -180,23 +203,24 @@ struct BTreeLC : public BTreeBase<Key, Value> {
     if (node->getType() == PageType::BTreeLeaf) {
       // The root node is a leaf node.
       if constexpr (ty == Sh) {
-        node->readLock(&q);
+        node->readLock(q);
       } else {
-        node->writeLock(&q);
+        node->writeLock(q);
       }
       if (node != root) {
         if constexpr (ty == Sh) {
-          node->readUnlock(&q);
+          node->readUnlock(q);
         } else {
-          node->writeUnlock(&q);
+          node->writeUnlock(q);
         }
         goto restart;
       }
+      q_out = q;
       return true;
     }
-    node->readLock();
+    node->readLock(q);
     if (node != root) {
-      node->readUnlock();
+      node->readUnlock(q);
       goto restart;
     }
 
@@ -207,28 +231,32 @@ struct BTreeLC : public BTreeBase<Key, Value> {
 
       if (next->getType() == PageType::BTreeInner) {
         // [next] is an inner node
-        next->readLock();
+        next->readLock(nq);
       } else {
         // [next] is a leaf node, just take (shared or exclusive) latch
         if constexpr (ty == Sh) {
-          next->readLock(&q);
+          next->readLock(nq);
         } else {
-          next->writeLock(&q);
+          next->writeLock(nq);
         }
       }
-      node->readUnlock();
+      node->readUnlock(q);
 
       node = next;
+      std::swap(q, nq);
     }
 
     // We now have a latch on [node]
+    q_out = q;
     return true;
   }
 
   bool lookup(Key k, Value &result) {
     NodeBase *node = nullptr;
-    DEFINE_CONTEXT(q, 0);
-    traverseToLeaf<Sh>(k, q, node);
+    DEFINE_CONTEXT(q0, 0);
+    DEFINE_CONTEXT(q1, 1);
+    OMCSLock::Context *q = nullptr;
+    traverseToLeaf<Sh>(k, q0, q1, node, q);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     unsigned pos = leaf->lowerBound(k);
     bool success = false;
@@ -236,7 +264,7 @@ struct BTreeLC : public BTreeBase<Key, Value> {
       success = true;
       result = leaf->data[pos].second;
     }
-    node->readUnlock(&q);
+    node->readUnlock(q);
     return success;
   }
 
@@ -247,38 +275,44 @@ struct BTreeLC : public BTreeBase<Key, Value> {
       return insertPessimistically(k, v);
     }
     NodeBase *node = nullptr;
-    DEFINE_CONTEXT(q, 0);
-    traverseToLeaf<Ex>(k, q, node);
+    DEFINE_CONTEXT(q0, 0);
+    DEFINE_CONTEXT(q1, 1);
+    OMCSLock::Context *q = nullptr;
+    traverseToLeaf<Ex>(k, q0, q1, node, q);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     if (leaf->isFull()) {
       // We have bad luck. Unlock [node] and retry the entire traversal,
       // taking exclusive latches along the way
-      node->writeUnlock(&q);
+      node->writeUnlock(q);
       goto restart;
     } else {
       bool ok = leaf->insert(k, v);
-      node->writeUnlock(&q);
+      node->writeUnlock(q);
       return ok;
     }
   }
 
   bool remove(Key k) {
     NodeBase *node = nullptr;
-    DEFINE_CONTEXT(q, 0);
-    traverseToLeaf<Ex>(k, q, node);
+    DEFINE_CONTEXT(q0, 0);
+    DEFINE_CONTEXT(q1, 1);
+    OMCSLock::Context *q = nullptr;
+    traverseToLeaf<Ex>(k, q0, q1, node, q);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     bool ok = leaf->remove(k);
-    node->writeUnlock(&q);
+    node->writeUnlock(q);
     return ok;
   }
 
   bool update(Key k, Value v) {
     NodeBase *node = nullptr;
-    DEFINE_CONTEXT(q, 0);
-    traverseToLeaf<Ex>(k, q, node);
+    DEFINE_CONTEXT(q0, 0);
+    DEFINE_CONTEXT(q1, 1);
+    OMCSLock::Context *q = nullptr;
+    traverseToLeaf<Ex>(k, q0, q1, node, q);
     auto leaf = static_cast<BTreeLeaf<Key, Value> *>(node);
     bool ok = leaf->update(k, v);
-    node->writeUnlock(&q);
+    node->writeUnlock(q);
     return ok;
   }
 };

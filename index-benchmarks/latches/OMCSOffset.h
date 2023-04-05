@@ -103,8 +103,13 @@ inline QNode *get_qnode(size_t i) {
 
 inline void reset_tls_qnodes() {
 #ifdef OMCS_OFFSET
+#ifdef BTREE_RWLOCK_MCSRW_ONLY
+  // XXX(shiges): we might need 8-9 qnodes for our workloads
+  constexpr size_t QNODES_PER_THREAD = 16;
+#else
   // XXX(shiges): grab 4 qnodes every time
   constexpr size_t QNODES_PER_THREAD = 4;
+#endif
 #ifdef OMCS_OFFSET_NUMA_QNODE
   uint32_t socket = numa_node_of_cpu(sched_getcpu());
   uint32_t qnodes_per_page = PAGE_SIZE / sizeof(QNode);

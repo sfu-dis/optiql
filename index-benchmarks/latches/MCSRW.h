@@ -111,7 +111,11 @@ class MCSRWLock {
   static constexpr uint32_t kWriterActiveFlag = 0x1;
   static constexpr uint32_t kReaderCountIncr = 0x10;
 #ifdef OMCS_OFFSET
+#ifdef BTREE_RWLOCK_MCSRW_ONLY
+  static constexpr uint64_t kQueueNodeIdBits = 12;  // At most 4096 qnodes
+#else
   static constexpr uint64_t kQueueNodeIdBits = 10;  // At most 1024 qnodes
+#endif
   static constexpr uint64_t kNumQueueNodes = 1 << kQueueNodeIdBits;
   static_assert(kQueueNodeIdBits + 1 <= 16);
 #endif  // OMCS_OFFSET
