@@ -269,6 +269,7 @@ struct BTreeLC : public BTreeBase<Key, Value> {
   }
 
   bool insert(Key k, Value v) {
+    constexpr int kMaxInsertRetries = 0;
     int restartCount = 0;
   restart:
     if (restartCount++ == kMaxInsertRetries) {
