@@ -4093,8 +4093,10 @@ class BwTree : public BwTreeBase {
     const KeyValuePair *found_pair_p = nullptr;
 
 retry_traverse:
+#ifdef BWTREE_DEBUG
     assert(context_p->abort_flag == false);
     assert(context_p->current_level == -1);
+#endif
 
     // This is the serialization point for reading/writing root node
     NodeID start_node_id = root_id.load();
@@ -6299,7 +6301,9 @@ abort_traverse:
    * which also freed up the logical node object
    */
   static inline NodeSnapshot *GetLatestNodeSnapshot(Context *context_p) {
+#ifdef BWTREE_DEBUG
     assert(context_p->current_level >= 0);
+#endif
 
     return &context_p->current_snapshot;
   }
@@ -6316,7 +6320,9 @@ abort_traverse:
    */
   inline NodeSnapshot *GetLatestParentNodeSnapshot(Context *context_p) {
     // Make sure the current node has a parent
+#ifdef BWTREE_DEBUG
     assert(context_p->current_level >= 1);
+#endif
 
     // This is the address of the parent node
     return &context_p->parent_snapshot;
@@ -6333,7 +6339,9 @@ abort_traverse:
    * since root node does not have any parent node
    */
   inline bool IsOnLeftMostChild(Context *context_p) {
+#ifdef BWTREE_DEBUG
     assert(context_p->current_level >= 1);
+#endif
 
     return GetLatestParentNodeSnapshot(context_p)->node_p->GetLowKeyNodeID() == \
            GetLatestNodeSnapshot(context_p)->node_id;
@@ -6362,7 +6370,9 @@ abort_traverse:
   void JumpToLeftSibling(Context *context_p) {
     bwt_printf("Jumping to the left sibling\n");
 
+#ifdef BWTREE_DEBUG
     assert(context_p->HasParentNode());
+#endif
 
     // Get last record which is the current node's context
     // and we must make sure the current node is not left mode node
@@ -6705,8 +6715,10 @@ before_switch:
    */
   void TraverseBI(Context *context_p) {
 retry_traverse:
+#ifdef BWTREE_DEBUG
     assert(context_p->abort_flag == false);
     assert(context_p->current_level == -1);
+#endif
 
     NodeID start_node_id = root_id.load();
     context_p->current_snapshot.node_id = INVALID_NODE_ID;
@@ -6770,8 +6782,10 @@ abort_traverse:
   void TraverseReadOptimized(Context *context_p,
                              std::vector<ValueType> *value_list_p) {
 retry_traverse:
+#ifdef BWTREE_DEBUG
     assert(context_p->abort_flag == false);
     assert(context_p->current_level == -1);
+#endif
 
     // This is the serialization point for reading/writing root node
     NodeID child_node_id = root_id.load();
@@ -7260,7 +7274,9 @@ before_switch:
           next_item_p = &split_node_p->child_node_p->GetHighKeyPair();
         }
 
+#ifdef BWTREE_DEBUG
         assert(context_p->current_level >= 0);
+#endif
 
         // If the parent snapshot has an invalid node ID then it must be the
         // root node. 
