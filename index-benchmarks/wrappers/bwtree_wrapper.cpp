@@ -9,10 +9,15 @@ extern "C" tree_api *create_tree(const tree_options_t &opt) { return new bwtree_
 
 bwtree_wrapper::bwtree_wrapper(const tree_options_t &opt) {
   tree = new BwTreeType{};
-  tree->UpdateThreadLocal(opt.num_threads);
+  // XXX(shiges): If verification in PiBench is needed, make
+  // this opt.num_threads * 3 since it does not recycle threads
+  tree->UpdateThreadLocal(opt.num_threads * 2);
 }
 
-bwtree_wrapper::~bwtree_wrapper() { delete tree; }
+bwtree_wrapper::~bwtree_wrapper() {
+  // FIXME(shiges): we let it leak
+  // delete tree;
+}
 
 bool bwtree_wrapper::bulk_load(const char *data, size_t num_records, size_t key_sz,
                                  size_t value_sz) {
@@ -55,11 +60,14 @@ bool bwtree_wrapper::insert(const char *key, size_t key_sz, const char *value, s
 }
 
 bool bwtree_wrapper::update(const char *key, size_t key_sz, const char *value, size_t value_sz) {
+  // FIXME(shiges): BwTree does not support Update(). If the given key is not present,
+  // this method will *insert* this new pair using the Upsert() interface.
   uint64_t ikey = *reinterpret_cast<const uint64_t *>(key);
   ikey = __builtin_bswap64(ikey);
   uint64_t ival = 0;
   memcpy(&ival, value, sizeof(uint64_t));
-  return tree->Upsert(ikey, ival);
+  // XXX(shiges): BwTree Upsert() returns false to indicate an update was successful
+  return !tree->Upsert(ikey, ival);
 }
 
 bool bwtree_wrapper::remove(const char *key, size_t key_sz) {
@@ -82,17 +90,6 @@ int bwtree_wrapper::scan(const char *key, size_t key_sz, int scan_sz, char *&val
   return values_idx;
 }
 
-thread_local static int my_thread_id;
-
 void bwtree_wrapper::tls_setup() {
-  my_thread_id = next_thread_id.fetch_add(1);
-  tree->AssignGCID(my_thread_id);
-}
-
-void bwtree_wrapper::tls_cleanup() {
-  tree->UnregisterThread(my_thread_id);
-}
-
-void bwtree_wrapper::tls_reset() {
-  next_thread_id = 0;
+  tree->RegisterThread();
 }

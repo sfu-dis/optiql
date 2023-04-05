@@ -39,6 +39,8 @@
 
 #include <sys/mman.h>
 
+#include <glog/logging.h>
+
 /*
  * BWTREE_PELOTON - Specifies whether Peloton-specific features are
  *                  Compiled or not

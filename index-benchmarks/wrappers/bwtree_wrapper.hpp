@@ -21,11 +21,8 @@ public:
   virtual bool remove(const char *key, size_t key_sz) override final;
   virtual int scan(const char *key, size_t key_sz, int scan_sz, char *&values_out) override final;
   virtual void tls_setup() override final;
-  void tls_cleanup();
-  void tls_reset();
 
 private:
   using BwTreeType = wangziqi2013::bwtree::BwTree<uint64_t, uint64_t>;
   BwTreeType *tree;
-  std::atomic<int> next_thread_id{0};
 };

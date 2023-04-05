@@ -19,7 +19,8 @@ using WrapperTypes = ::testing::Types<bwtree_wrapper>;
 TYPED_TEST_SUITE(WrapperTest, WrapperTypes);
 
 TYPED_TEST(WrapperTest, InsertThenSearch) {
-  tree_options_t tree_opt { .num_threads = kNumThreads };
+  tree_options_t tree_opt;
+  tree_opt.num_threads = kNumThreads;
   bwtree_wrapper *tree = new bwtree_wrapper(tree_opt);
 
   std::vector<std::thread *> threads;
@@ -45,7 +46,6 @@ TYPED_TEST(WrapperTest, InsertThenSearch) {
               ASSERT_TRUE(ok);
             }
           }
-          tree->tls_cleanup();
         },
         i));
   }
@@ -54,7 +54,6 @@ TYPED_TEST(WrapperTest, InsertThenSearch) {
     delete t;
   }
   threads.clear();
-  tree->tls_reset();
 
   std::atomic<uint64_t> barrier2(kNumThreads);
   for (uint64_t i = 0; i < kNumThreads; ++i) {
@@ -72,7 +71,6 @@ TYPED_TEST(WrapperTest, InsertThenSearch) {
             ASSERT_TRUE(ok);
             ASSERT_EQ(value, k % kNumThreads);
           }
-          tree->tls_cleanup();
         },
         i));
   }
@@ -81,7 +79,6 @@ TYPED_TEST(WrapperTest, InsertThenSearch) {
     delete t;
   }
   threads.clear();
-  tree->tls_reset();
 
   delete tree;
 }
