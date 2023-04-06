@@ -51,7 +51,7 @@ class PiBenchExperiment:
     def run(self, ith, idx, total):
         commands = [*self.numactl, PiBenchExperiment.pibench_bin,
                     self.wrapper_bin, *self.pibench_args]
-        if 'stdrw' in self.index:
+        if 'stdrw' in self.index or 'mcsrw' in self.index:
             commands.append('--bulk_load')
         print(f'Executing ({idx}/{total}):', ' '.join(commands))
         result_text = None
