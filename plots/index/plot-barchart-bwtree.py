@@ -28,19 +28,18 @@ indexes = [
     'bwtree',
 ]
 labels = [
-    'B+-tree (OptLock)',
-    'B+-tree (OptiQL)',
-    'ART (OptLock)',
-    'ART (OptiQL)',
+    'B+-tree\n(OptLock)',
+    'B+-tree\n(OptiQL)',
+    'ART\n(OptLock)',
+    'ART\n(OptiQL)',
     'OpenBw-Tree',
 ]
 
 latch_labels = labels
 
-# threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
-threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
+threads = [10, 20, 40]
 
-x_labels = [1, 20, 40, 60, 80]
+legends = [f'{t}t' for t in threads]
 
 
 class PiBenchExperiment:
@@ -60,8 +59,7 @@ if __name__ == '__main__':
             'data', 'All.csv')).iloc[:, 1:]
 
         markers = ['v', '^', '<', '>', 'P']
-        sp = sns.color_palette()
-        palette = [sp[0], sp[2], sp[5], sp[6], sp[7]]
+        palette = sns.color_palette("Set2")
 
         ylabels = ['Balanced\nMillion ops/s']
         read_ratios = [0.5]
@@ -87,26 +85,15 @@ if __name__ == '__main__':
                                & (dataframe['Read-ratio'] == read_ratios[r])
                                & (dataframe['Update-ratio'] == update_ratios[r])]
                 df1 = df[['thread', 'index', 'replicate', 'succeeded']]
-                assert(df1.shape[0] == len(
-                    threads) * len(indexes) * PiBenchExperiment.NUM_REPLICATES)
 
                 ax.yaxis.set_major_locator(MaxNLocator(5))
 
-                for i, index in enumerate(indexes):
-                    line = df1[df1['index'] == index]
-                    g = sns.lineplot(data=line, x='thread', y='succeeded',
-                                     marker=markers[i], markersize=6, color=palette[i],
-                                     linewidth=1, markeredgecolor='black', markeredgewidth=0.3,
-                                     ax=ax, label=latch_labels[i], legend=False)
-                #g = sns.lineplot(data=df1, ax=ax, legend=False)
-                g.set_xticks(x_labels)
-
-                ax.grid(axis='y', alpha=0.4)
-                ax.axvspan(20, 40, facecolor='0.2', alpha=0.10)
-                ax.axvspan(40, 80, facecolor='0.2', alpha=0.20)
+                df2 = df1[df1['thread'].isin(threads)]
+                g = sns.barplot(data=df2, x='index', y='succeeded', hue='thread', palette=palette,
+                                ax=ax)
+                g.legend_.remove()
                 ax.set_xlabel("")
                 ax.set_ylabel("")
-                ax.set_xlim([0, 80])
                 if c == 0:
                     ax.set_ylabel(ylabels[r])
                 ax.set_xlabel(xlabels[c])
@@ -115,18 +102,23 @@ if __name__ == '__main__':
                     lambda x, pos: '{0:g}'.format(x/1e6))
                 ax.yaxis.set_major_formatter(ticks_y)
 
+                ax.set_xticklabels(labels)
+                for tick in ax.get_xticklabels():
+                    tick.set_rotation(60)
+                    tick.set_fontsize(7)
+
         # axs[0, 0].set_ylim([0, 125_000_000])
         # axs[0, 1].set_ylim([0, 80_000_000])
         # axs[0, 2].set_ylim([0, 50_000_000])
         # axs[1, 0].set_ylim([0, 200_000_000])
         # axs[1, 1].set_ylim([0, 80_000_000])
         # axs[1, 2].set_ylim([0, 50_000_000])
-        axs[0].set_ylim([0, 160_000_000])
-        axs[1].set_ylim([0, 45_000_000])
+        axs[0].set_ylim([0, 100_000_000])
+        axs[1].set_ylim([0, 50_000_000])
 
         lines, _ = axs[0].get_legend_handles_labels()
-        fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.4, 1.25), ncol=3, frameon=False, handletextpad=0.5, columnspacing=0.7)
+        fig.legend(lines, legends, loc='center', bbox_to_anchor=(
+            0.4, 1.15), ncol=len(legends), frameon=False, handletextpad=0.5, columnspacing=0.7)
 
         # fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
