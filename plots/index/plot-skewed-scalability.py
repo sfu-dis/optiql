@@ -12,6 +12,7 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
 from IPython import embed
+from utils import savefig
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
@@ -19,36 +20,38 @@ pd.options.display.max_rows = None
 NUM_SOCKETS = 2
 NUM_CORES = 20
 
-indexes = ['btreeolc_upgrade',
-          'btreeomcs_leaf_offset',
-          'btreeomcs_leaf_op_read',
-          'btreelc_mcsrw_crp',
-          'btreelc_stdrw',
-          'btreeolc_mcsrw_hybrid',
-          'artolc_upgrade',
-          'artomcs_offset',
-          'artomcs_op_read',
-          'artlc_mcsrw_crp',
-          'artlc_stdrw',
+indexes = [
+    'btreeolc_upgrade',
+    'btreeomcs_leaf_offset',
+    'btreeomcs_leaf_op_read',
+    'btreelc_stdrw',
+    'btreelc_mcsrw',
+    'artolc_upgrade',
+    'artomcs_offset',
+    'artomcs_op_read',
+    'artlc_stdrw',
+    'artlc_mcsrw',
 ]
-labels = ['B+Tree OptLock',
-          'B+Tree OptiQL-NOR',
-          'B+Tree OptiQL',
-          'B+Tree MCSRW CRP',
-          'B+Tree STDRW',
-          'B+Tree OptLock-MCSRW',
-          'ART OptLock',
-          'ART OptiQL-NOR',
-          'ART OptiQL',
-          'ART MCSRW CRP',
-          'ART STDRW',
+labels = [
+    'B+-tree OptLock',
+    'B+-tree OptiQL-NOR',
+    'B+-tree OptiQL',
+    'B+-tree STDRW',
+    'B+-tree MCSRW',
+    'ART OptLock',
+    'ART OptiQL-NOR',
+    'ART OptiQL',
+    'ART STDRW',
+    'ART MCSRW',
 ]
 
 btree_indexes = [index for index in indexes if 'btree' in index]
+# btree_indexes += ['bwtree']
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'CRP-MCSRW', 'std', 'OptLock-MCSRW']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'pthread', 'MCS-RW']
+# latch_labels += ['BwTree']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
@@ -69,15 +72,8 @@ if __name__ == '__main__':
         nrows = 2
         ncols = 5
 
-        dataframe = None
-        if key_type == 'dense-int':
-            dataframe = pd.read_csv(os.path.join(
-                'data', 'All.csv')).iloc[:, 1:]
-        elif key_type == 'sparse-int':
-            dataframe = pd.read_csv(os.path.join(
-                'scalability', 'All-sparse.csv')).iloc[:, 1:]
-        else:
-            raise ValueError
+        dataframe = pd.read_csv(os.path.join(
+            'data', 'All.csv')).iloc[:, 1:]
 
         markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
 
@@ -85,7 +81,7 @@ if __name__ == '__main__':
         labels = [btree_labels, art_labels]
         distributions = ['selfsimilar', 'selfsimilar']
         skew_factors = [0.2, 0.2]
-        ylabels = ['B+-Tree', 'ART']
+        ylabels = ['B+-tree', 'ART']
 
         titles = ['Read-only', 'Read-heavy',
                   'Balanced', 'Write-heavy', 'Update-only']
@@ -100,7 +96,8 @@ if __name__ == '__main__':
             for c in range(ncols):
                 ax = axs[r, c]
 
-                df = dataframe[(dataframe['key-type'] == key_type)
+                df = dataframe[(dataframe['exp'] == 'scalability')
+                               & (dataframe['key-type'] == key_type)
                                & (dataframe['index'].isin(indexes[r]))
                                & (dataframe['distribution'] == distributions[r])
                                & (dataframe['skew-factor'] == skew_factors[r])
@@ -137,25 +134,25 @@ if __name__ == '__main__':
                 ticks_y = ticker.FuncFormatter(
                     lambda x, pos: '{0:g}'.format(x/1e6))
                 ax.yaxis.set_major_formatter(ticks_y)
+                ax.set_ylim(bottom=0)
 
         if key_type == 'dense-int':
             axs[0, 0].set_ylim([0, 125_000_000])
-            axs[0, 1].set_ylim([0, 80_000_000])
+            axs[0, 1].set_ylim([0, 75_000_000])
             axs[0, 2].set_ylim([0, 50_000_000])
             axs[1, 0].set_ylim([0, 200_000_000])
-            axs[1, 1].set_ylim([0, 80_000_000])
+            axs[1, 1].set_ylim([0, 75_000_000])
             axs[1, 2].set_ylim([0, 50_000_000])
 
         lines, _ = axs[0, 0].get_legend_handles_labels()
-        fig.legend(lines, latch_labels, loc='upper right', bbox_to_anchor=(
-            0.72, 1.20), ncol=len(latch_labels), frameon=False)
+        fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
+            0.5, 1.10), ncol=len(latch_labels), frameon=False)
 
         fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
         fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
                             top=0.9, hspace=0.4, wspace=0.25)
-        plt.savefig(f'Scalability-skewed.pdf',
-                    format='pdf', bbox_inches='tight', pad_inches=0)
+        savefig(plt, 'Scalability-skewed')
 
     plt.rcParams.update({'font.size': 10})
     plt.rcParams['text.usetex'] = True

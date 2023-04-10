@@ -12,6 +12,7 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
 from IPython import embed
+from utils import savefig
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
@@ -19,19 +20,38 @@ pd.options.display.max_rows = None
 NUM_SOCKETS = 2
 NUM_CORES = 20
 
-indexes = ['btreeolc_upgrade',
-           'btreeomcs_leaf_offset', 'btreeomcs_leaf_op_read',
-           'artolc_upgrade',
-           'artomcs_offset', 'artomcs_op_read']
-labels = ['B+Tree OptLock-NB',
-          'B+Tree OMCS', 'B+Tree OMCS+OpRead',
-          'ART OptLock-NB',
-          'ART OMCS', 'ART OMCS+OpRead']
+indexes = [
+    'btreeolc_upgrade',
+    'btreeomcs_leaf_offset',
+    'btreeomcs_leaf_op_read',
+    'btreelc_stdrw',
+    'btreelc_mcsrw',
+    'artolc_upgrade',
+    'artomcs_offset',
+    'artomcs_op_read',
+    'artlc_stdrw',
+    'artlc_mcsrw',
+]
+labels = [
+    'B+-tree OptLock',
+    'B+-tree OptiQL-NOR',
+    'B+-tree OptiQL',
+    'B+-tree STDRW',
+    'B+-tree MCSRW',
+    'ART OptLock',
+    'ART OptiQL-NOR',
+    'ART OptiQL',
+    'ART STDRW',
+    'ART MCSRW',
+]
+
 btree_indexes = [index for index in indexes if 'btree' in index]
+# btree_indexes += ['bwtree']
 art_indexes = [index for index in indexes if 'art' in index]
 btree_labels = [label for label in labels if 'B+Tree' in label]
 art_labels = [label for label in labels if 'ART' in label]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'pthread', 'MCS-RW']
+# latch_labels += ['BwTree']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
 threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
@@ -47,12 +67,13 @@ if __name__ == '__main__':
     NUM_RECORDS = 100_000_000
     SECONDS = 10
 
-    dataframe = pd.read_csv(os.path.join('data', 'All.csv')).iloc[:, 1:]
-
     # start plotting
     def plot_scalability(key_type='sparse-int'):
         nrows = 1
         ncols = 2
+
+        dataframe = pd.read_csv(os.path.join(
+            'data', 'All.csv')).iloc[:, 1:]
 
         markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
 
@@ -75,7 +96,8 @@ if __name__ == '__main__':
             for c in range(ncols):
                 ax = axs[c]
 
-                df = dataframe[(dataframe['key-type'] == key_type)
+                df = dataframe[(dataframe['exp'] == 'scalability')
+                               & (dataframe['key-type'] == key_type)
                                & (dataframe['index'].isin(indexes[c]))
                                & (dataframe['distribution'] == distributions[c])
                                & (dataframe['skew-factor'] == skew_factors[c])
@@ -121,18 +143,18 @@ if __name__ == '__main__':
         # axs[1].set_ylim([0, 160_000_000])
 
         lines, _ = axs[0].get_legend_handles_labels()
-        fig.legend(lines, latch_labels, loc='upper right', bbox_to_anchor=(
-            0.95, 1.35), ncol=len(latch_labels), frameon=False, handletextpad=0.5, columnspacing=0.7)
+        fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
+            0.5, 1.25), ncol=3, frameon=False, handletextpad=0.5, columnspacing=0.7)
 
         # fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
         fig.subplots_adjust(left=0.0, right=0.98, bottom=0.05,
                             top=0.9, hspace=0.4, wspace=0.35)
-        plt.savefig(f'Scalability-skewed-sparse.pdf',
-                    format='pdf', bbox_inches='tight', pad_inches=0)
+        savefig(plt, 'Scalability-skewed-sparse')
 
     plt.rcParams.update({'font.size': 10})
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = '\\usepackage{libertine}\n\\usepackage{libertinust1math}\n\\usepackage[T1]{fontenc}'
     plt.rcParams["font.family"] = "serif"
+
     plot_scalability(key_type='sparse-int')

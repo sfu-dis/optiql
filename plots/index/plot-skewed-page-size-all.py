@@ -12,6 +12,7 @@ import matplotlib.patches as mpatches
 import seaborn as sns
 import numpy as np
 from IPython import embed
+from utils import savefig
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
@@ -19,27 +20,21 @@ pd.options.display.max_rows = None
 NUM_SOCKETS = 2
 NUM_CORES = 20
 
-indexes = ['btreeolc_upgrade',
-           'btreeomcs_leaf_offset',
-           'btreeomcs_leaf_op_read',
-           'btreeomcs_leaf_op_read_new_api',
-           'btreeomcs_leaf_op_read_new_api_baseline',
-           'btreeomcs_leaf_op_read_callback',
-           'btreeomcs_leaf_op_read_callback_baseline',
-          ]
-labels = ['B+Tree OptLock',
-          'B+Tree OptiQL-NOR',
-          'B+Tree OptiQL',
-          'NEW API',
-          'NEW API Baseline',
-          'Callback',
-          'Callback Baseline',
-         ]
+indexes = [
+    'btreeolc_upgrade',
+    'btreeomcs_leaf_offset',
+    'btreeomcs_leaf_op_read',
+    'btreeomcs_leaf_op_read_new_api',
+]
+labels = [
+    'B+-tree OptLock',
+    'B+-tree OptiQL-NOR',
+    'B+-tree OptiQL',
+    'B+-tree New API',
+]
 page_sizes = [256, 512, 1024, 2048, 4096, 8192, 16384]
 page_size_suffices = ['', '_512', '_1K', '_2K', '_4K', '_8K', '_16K']
-all_indexes = [index + suffix for index in indexes for suffix in page_size_suffices]
-all_labels = [label + suffix for label in labels for suffix in page_size_suffices]
-latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'New API', 'New API-Baseline', 'Callback', 'Callback-Baseline']
+latch_labels = ['OptLock', 'OptiQL-NOR', 'OptiQL', 'New API']
 
 threads = [1, 20, 40]
 
@@ -59,15 +54,8 @@ if __name__ == '__main__':
         nrows = 3
         ncols = 5
 
-        dataframe = None
-        if key_type == 'dense-int':
-            dataframe = pd.read_csv(os.path.join(
-                'data', 'All.csv')).iloc[:, 1:]
-        elif key_type == 'sparse-int':
-            dataframe = pd.read_csv(os.path.join(
-                'scalability', 'All-sparse.csv')).iloc[:, 1:]
-        else:
-            raise ValueError
+        dataframe = pd.read_csv(os.path.join(
+            'data', 'All.csv')).iloc[:, 1:]
 
         def find_page_size(index):
             tokens = index.split('_')
@@ -84,14 +72,16 @@ if __name__ == '__main__':
             return (index, 256)
 
         # I should learn how to use Pandas someday
-        dataframe['page_size'] = dataframe.apply(lambda r: find_page_size(r['index'])[1], axis=1)
-        dataframe['index'] = dataframe.apply(lambda r: find_page_size(r['index'])[0], axis=1)
+        dataframe['page_size'] = dataframe.apply(
+            lambda r: find_page_size(r['index'])[1], axis=1)
+        dataframe['index'] = dataframe.apply(
+            lambda r: find_page_size(r['index'])[0], axis=1)
 
         markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
 
         distributions = ['selfsimilar', 'selfsimilar', 'selfsimilar']
         skew_factors = [0.2, 0.2, 0.2]
-        ylabels = ['B+-Tree (1t)', 'B+-Tree (20t)', 'B+-Tree (40t)']
+        ylabels = ['B+-tree (1t)', 'B+-tree (20t)', 'B+-tree (40t)']
         threads = [1, 20, 40]
 
         titles = ['Read-only', 'Read-heavy',
@@ -107,16 +97,18 @@ if __name__ == '__main__':
             for c in range(ncols):
                 ax = axs[r, c]
 
-                df = dataframe[(dataframe['key-type'] == key_type)
+                df = dataframe[(dataframe['exp'] == 'page-size')
+                               & (dataframe['key-type'] == key_type)
                                & (dataframe['index'].isin(indexes))
                                & (dataframe['distribution'] == distributions[r])
                                & (dataframe['skew-factor'] == skew_factors[r])
                                & (dataframe['Read-ratio'] == read_ratios[c])
                                & (dataframe['Update-ratio'] == update_ratios[c])
                                & (dataframe['thread'] == threads[r])]
-                
+
                 df1 = df[['index', 'page_size', 'replicate', 'succeeded']]
-                assert(df1.shape[0] == len(page_sizes) * len(indexes) * PiBenchExperiment.NUM_REPLICATES)
+                assert(df1.shape[0] == len(page_sizes) *
+                       len(indexes) * PiBenchExperiment.NUM_REPLICATES)
 
                 ax.yaxis.set_major_locator(MaxNLocator(5))
 
@@ -131,6 +123,8 @@ if __name__ == '__main__':
                 #g = sns.lineplot(data=df1, ax=ax, legend=False)
                 g.set_xscale('log')
                 g.set_xticks(page_sizes, x_labels)
+                g.get_xaxis().set_tick_params(which='minor', size=0)
+                g.get_xaxis().set_tick_params(which='minor', width=0)
 
                 ax.grid(axis='y', alpha=0.4)
                 ax.set_xlabel("")
@@ -156,14 +150,13 @@ if __name__ == '__main__':
 
         lines, _ = axs[0, 0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.5, 1.05), ncol=len(latch_labels), frameon=False)
+            0.5, 1.0), ncol=len(latch_labels), frameon=False)
 
         fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
         fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
                             top=0.9, hspace=0.4, wspace=0.25)
-        plt.savefig(f'Page-size-skewed.pdf',
-                    format='pdf', bbox_inches='tight', pad_inches=0)
+        savefig(plt, 'Page-size-skewed-all')
 
     plt.rcParams.update({'font.size': 10})
     plt.rcParams['text.usetex'] = True

@@ -99,13 +99,13 @@ class PiBenchExperiment:
                 f.writelines(result.stdout)
 
 
-gl_df_columns = ['name'] + [f'{opType}-ratio' for opType in PiBenchExperiment.opTypes] + ['key-type', 'distribution', 'skew-factor'] + ['index', 'thread', 'replicate'] + PiBenchExperiment.finishTypes + [
+gl_df_columns = ['exp', 'name'] + [f'{opType}-ratio' for opType in PiBenchExperiment.opTypes] + ['key-type', 'distribution', 'skew-factor'] + ['index', 'thread', 'replicate'] + PiBenchExperiment.finishTypes + [
     f'{opType}-{finishType}' for opType in PiBenchExperiment.opTypes for finishType in PiBenchExperiment.finishTypes]
 
 dataframe = pd.DataFrame(columns=gl_df_columns)
 
 
-def run_all_experiments(name, dense=True, *args, **kwargs):
+def run_all_experiments(expname, name, indexes, labels, threads, dense=True, *args, **kwargs):
     # Don't move this file
     if not dense:
         name = f'{name}-sparse'
@@ -129,39 +129,12 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
 
     experiments = []
 
-    indexes = ['btreeolc_upgrade',
-               'btreeomcs_leaf_offset',
-               'btreeomcs_leaf_op_read',
-               'btreelc_mcsrw_crp',
-               'btreelc_stdrw',
-               'btreeolc_mcsrw_hybrid',
-               'artolc_upgrade',
-               'artomcs_offset',
-               'artomcs_op_read',
-               'artlc_mcsrw_crp',
-               'artlc_stdrw',
-    ]
-    labels = ['B+Tree OptLock',
-              'B+Tree OptiQL-NOR',
-              'B+Tree OptiQL',
-              'B+Tree MCSRW CRP',
-              'B+Tree STDRW',
-              'B+Tree OptLock-MCSRW',
-              'ART OptLock',
-              'ART OptiQL-NOR',
-              'ART OptiQL',
-              'ART MCSRW CRP',
-              'ART STDRW',
-    ]
     btree_indexes = [index for index in indexes if 'btree' in index]
     art_indexes = [index for index in indexes if 'art' in index]
     btree_labels = [label for label in labels if 'B+Tree' in label]
     art_labels = [label for label in labels if 'ART' in label]
 
     assert(len(indexes) == len(labels))
-
-    #threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
-    threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
 
     estimated_sec = prod(
         [len(indexes), len(threads), PiBenchExperiment.NUM_REPLICATES, kwargs['seconds']])
@@ -199,7 +172,7 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
             objs.append(row)
 
     df = pd.concat(objs, ignore_index=True)
-    df.to_csv(os.path.join(data_dir, f'{name}.csv'))
+    df.to_csv(os.path.join(data_dir, f'{expname}-{name}.csv'))
 
     plotFinishType = 'succeeded'
 
@@ -217,7 +190,7 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
     df_digest = df.groupby(['index', 'thread']).agg(
         ['mean', 'min', 'max', rstddev])[plotFinishType]
     print(df_digest)
-    df_digest.to_csv(os.path.join(data_dir, f'{name}-digest.csv'))
+    df_digest.to_csv(os.path.join(data_dir, f'{expname}-{name}-digest.csv'))
 
     # g.set_xticks(threads)
     # g.set(xlabel='Number of threads')
@@ -263,6 +236,7 @@ def run_all_experiments(name, dense=True, *args, **kwargs):
     if 'scan_ratio' in kwargs:
         scan_ratio = kwargs['scan_ratio']
 
+    df['exp'] = expname
     df['name'] = name
     df['Insert-ratio'] = insert_ratio
     df['Read-ratio'] = read_ratio
@@ -297,42 +271,102 @@ if __name__ == '__main__':
     except:
         print(f'Raw data directory already exists')
 
+    # scalability
+    indexes = [
+        'btreeolc_upgrade',
+        'btreeomcs_leaf_offset',
+        'btreeomcs_leaf_op_read',
+        'btreelc_stdrw',
+        'btreelc_mcsrw',
+        'artolc_upgrade',
+        'artomcs_offset',
+        'artomcs_op_read',
+        'artlc_stdrw',
+        'artlc_mcsrw',
+        'bwtree',
+    ]
+    labels = [
+        'B+-tree OptLock',
+        'B+-tree OptiQL-NOR',
+        'B+-tree OptiQL',
+        'B+-tree STDRW',
+        'B+-tree MCSRW',
+        'ART OptLock',
+        'ART OptiQL-NOR',
+        'ART OptiQL',
+        'ART STDRW',
+        'ART MCSRW',
+        'Bw-Tree',
+    ]
+    #threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
+    threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
     # dense
-    run_all_experiments('Update-only-uniform', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
-    run_all_experiments('Update-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('Read-only-uniform', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Read-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=1.0, distribution='UNIFORM')
-    run_all_experiments('Read-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('Write-heavy-uniform', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Write-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.2, update_ratio=0.8, distribution='UNIFORM')
-    run_all_experiments('Write-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('Read-heavy-uniform', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Read-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.8, update_ratio=0.2, distribution='UNIFORM')
-    run_all_experiments('Read-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('Balanced-uniform', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Balanced-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='UNIFORM')
-    run_all_experiments('Balanced-selfsimilar', records=NUM_RECORDS, seconds=SECONDS,
+    run_all_experiments('scalability', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
 
     # sparse, skewed
-    run_all_experiments('Update-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('Read-only-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('Write-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    run_all_experiments('scalability', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('Read-heavy-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    run_all_experiments('scalability', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('Balanced-selfsimilar', records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    run_all_experiments('scalability', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
+                        read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
+
+    # page size, dense, skewed
+    index_bases = [
+        'btreeolc_upgrade',
+        'btreeomcs_leaf_offset',
+        'btreeomcs_leaf_op_read',
+        'btreeomcs_leaf_op_read_new_api',
+    ]
+    page_size_suffices = ['', '_512', '_1K', '_2K', '_4K', '_8K', '_16K']
+    indexes = [
+        index + suffix for index in index_bases for suffix in page_size_suffices]
+    label_bases = [
+        'B+-Tree OptLock',
+        'B+-Tree OptiQL-NOR',
+        'B+-Tree OptiQL',
+        'B+-Tree OptiQL New API',
+    ]
+    labels = [
+        label + suffix for label in label_bases for suffix in page_size_suffices]
+    threads = [1, 20, 40]
+
+    run_all_experiments('page-size', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('page-size', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('page-size', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('page-size', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
+    run_all_experiments('page-size', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
 
     dataframe.to_csv(os.path.join(data_dir, 'All.csv'))

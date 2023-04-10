@@ -68,48 +68,48 @@ if __name__ == '__main__':
     SECONDS = 10
 
     # start plotting
-    def plot_scalability(key_type='dense-int'):
-        nrows = 1
-        ncols = 2
+    def plot_scalability(key_type='sparse-int'):
+        nrows = 2
+        ncols = 5
 
         dataframe = pd.read_csv(os.path.join(
             'data', 'All.csv')).iloc[:, 1:]
 
         markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
 
-        ylabels = ['Balanced\nMillion ops/s']
-        read_ratios = [0.5]
-        update_ratios = [0.5]
-
-        distributions = ['uniform', 'uniform']
-        skew_factors = [0.0, 0.0]
-        titles = ['B+-tree', 'ART']
         indexes = [btree_indexes, art_indexes]
         labels = [btree_labels, art_labels]
-        xlabels = ['Threads\n(a) B+-tree', 'Threads\n(b) ART']
+        distributions = ['selfsimilar', 'selfsimilar']
+        skew_factors = [0.2, 0.2]
+        ylabels = ['B+-tree', 'ART']
+
+        titles = ['Read-only', 'Read-heavy',
+                  'Balanced', 'Write-heavy', 'Update-only']
+        read_ratios = [1.0, 0.8, 0.5, 0.2, 0.0]
+        update_ratios = [0.0, 0.2, 0.5, 0.8, 1.0]
 
         fig, axs = plt.subplots(nrows, ncols)
-        fig.set_size_inches(3.3, 0.75, forward=True)
-        fig.subplots_adjust(wspace=1)  # space between subfigs
+        fig.set_size_inches(9, 1.8, forward=True)
+        fig.subplots_adjust(wspace=0.25)  # space between subfigs
 
         for r in range(nrows):
             for c in range(ncols):
-                ax = axs[c]
+                ax = axs[r, c]
 
                 df = dataframe[(dataframe['exp'] == 'scalability')
                                & (dataframe['key-type'] == key_type)
-                               & (dataframe['index'].isin(indexes[c]))
-                               & (dataframe['distribution'] == distributions[c])
-                               & (dataframe['skew-factor'] == skew_factors[c])
-                               & (dataframe['Read-ratio'] == read_ratios[r])
-                               & (dataframe['Update-ratio'] == update_ratios[r])]
+                               & (dataframe['index'].isin(indexes[r]))
+                               & (dataframe['distribution'] == distributions[r])
+                               & (dataframe['skew-factor'] == skew_factors[r])
+                               & (dataframe['Read-ratio'] == read_ratios[c])
+                               & (dataframe['Update-ratio'] == update_ratios[c])]
                 df1 = df[['thread', 'index', 'replicate', 'succeeded']]
                 assert(df1.shape[0] == len(
-                    threads) * len(indexes[c]) * PiBenchExperiment.NUM_REPLICATES)
+                    threads) * len(indexes[r]) * PiBenchExperiment.NUM_REPLICATES)
 
                 ax.yaxis.set_major_locator(MaxNLocator(5))
 
-                for i, index in enumerate(indexes[c]):
+                for i, index in enumerate(indexes[r]):
                     line = df1[df1['index'] == index]
                     g = sns.lineplot(data=line, x='thread', y='succeeded',
                                      marker=markers[i], markersize=6,
@@ -124,36 +124,39 @@ if __name__ == '__main__':
                 ax.set_xlabel("")
                 ax.set_ylabel("")
                 ax.set_xlim([0, 80])
+                if r == 0:
+                    ax.set_title(titles[c], fontsize=10)
                 if c == 0:
                     ax.set_ylabel(ylabels[r])
-                ax.set_xlabel(xlabels[c])
+                if r == 1:
+                    ax.set_xlabel("Threads")
 
                 ticks_y = ticker.FuncFormatter(
                     lambda x, pos: '{0:g}'.format(x/1e6))
                 ax.yaxis.set_major_formatter(ticks_y)
+                ax.set_ylim(bottom=0)
 
-        # axs[0, 0].set_ylim([0, 125_000_000])
-        # axs[0, 1].set_ylim([0, 80_000_000])
-        # axs[0, 2].set_ylim([0, 50_000_000])
-        # axs[1, 0].set_ylim([0, 200_000_000])
-        # axs[1, 1].set_ylim([0, 80_000_000])
-        # axs[1, 2].set_ylim([0, 50_000_000])
-        axs[0].set_ylim([0, 80_000_000])
-        axs[1].set_ylim([0, 160_000_000])
+        # if key_type == 'dense-int':
+        #     axs[0, 0].set_ylim([0, 125_000_000])
+        #     axs[0, 1].set_ylim([0, 75_000_000])
+        #     axs[0, 2].set_ylim([0, 50_000_000])
+        #     axs[1, 0].set_ylim([0, 200_000_000])
+        #     axs[1, 1].set_ylim([0, 75_000_000])
+        #     axs[1, 2].set_ylim([0, 50_000_000])
 
-        lines, _ = axs[0].get_legend_handles_labels()
+        lines, _ = axs[0, 0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.5, 1.25), ncol=3, frameon=False, handletextpad=0.5, columnspacing=0.7)
+            0.5, 1.10), ncol=len(latch_labels), frameon=False)
 
-        # fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
+        fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
-        fig.subplots_adjust(left=0.0, right=0.98, bottom=0.05,
-                            top=0.9, hspace=0.4, wspace=0.35)
-        savefig(plt, 'Scalability-uniform')
+        fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
+                            top=0.9, hspace=0.4, wspace=0.25)
+        savefig(plt, 'Scalability-skewed-sparse-all')
 
     plt.rcParams.update({'font.size': 10})
     plt.rcParams['text.usetex'] = True
     plt.rcParams['text.latex.preamble'] = '\\usepackage{libertine}\n\\usepackage{libertinust1math}\n\\usepackage[T1]{fontenc}'
     plt.rcParams["font.family"] = "serif"
 
-    plot_scalability(key_type='dense-int')
+    plot_scalability(key_type='sparse-int')
