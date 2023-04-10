@@ -59,7 +59,7 @@ if __name__ == '__main__':
             'data', 'All.csv')).iloc[:, 1:]
 
         markers = ['v', '^', '<', '>', 'P']
-        palette = sns.color_palette("Set2")
+        palette = sns.color_palette("Set1")
 
         ylabels = ['Balanced\nMillion ops/s']
         read_ratios = [0.5]
