@@ -356,12 +356,8 @@ if __name__ == '__main__':
     ]
     labels = [
         label + suffix for label in label_bases for suffix in page_size_suffices]
-    threads = [1, 20, 40]
+    threads = [40]
 
-    run_all_experiments('page-size', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('page-size', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
     run_all_experiments('page-size', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
     run_all_experiments('page-size', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
