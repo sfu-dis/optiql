@@ -39,7 +39,7 @@ latch_labels = labels
 
 threads = [10, 20, 40]
 
-legends = [f'{t}t' for t in threads]
+legends = [f'{t} threads' for t in threads]
 
 
 class PiBenchExperiment:
@@ -67,7 +67,7 @@ if __name__ == '__main__':
 
         distributions = ['uniform', 'selfsimilar']
         skew_factors = [0.0, 0.2]
-        xlabels = ['Threads\n(a) Low contention', 'Threads\n(b) High contention']
+        xlabels = ['(a) Low contention', '(b) High contention']
 
         fig, axs = plt.subplots(nrows, ncols)
         fig.set_size_inches(3.3, 0.75, forward=True)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 
                 df2 = df1[df1['thread'].isin(threads)]
                 g = sns.barplot(data=df2, x='index', y='succeeded', hue='thread', palette=palette,
-                                ax=ax)
+                                ax=ax, edgecolor='.2', linewidth='0.5')
                 g.legend_.remove()
                 ax.set_xlabel("")
                 ax.set_ylabel("")
@@ -114,7 +114,7 @@ if __name__ == '__main__':
         # axs[1, 1].set_ylim([0, 80_000_000])
         # axs[1, 2].set_ylim([0, 50_000_000])
         axs[0].set_ylim([0, 100_000_000])
-        axs[1].set_ylim([0, 50_000_000])
+        axs[1].set_ylim([0, 65_000_000])
 
         lines, _ = axs[0].get_legend_handles_labels()
         fig.legend(lines, legends, loc='center', bbox_to_anchor=(
