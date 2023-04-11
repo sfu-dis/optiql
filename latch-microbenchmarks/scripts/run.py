@@ -16,8 +16,10 @@ pd.options.display.max_rows = None
 NUM_CORES = 20
 NUM_SOCKETS = 2
 
+
 def relative_stddev(x):
     return np.std(x, ddof=1) / np.mean(x) * 100
+
 
 class LatchExperiment:
     NUM_REPLICATES = 3
@@ -46,7 +48,8 @@ class LatchExperiment:
 
         print(f'Executing ({idx}/{total}):', ' '.join(commands))
         result_text = None
-        fname = "{}-{}-{}-{}-stdout.txt".format(self.name, self.latch, self.threads, replica)
+        fname = "{}-{}-{}-{}-stdout.txt".format(
+            self.name, self.latch, self.threads, replica)
         if os.path.exists(fname):
             print('Skipping')
             with open(fname) as f:
@@ -77,10 +80,14 @@ class LatchExperiment:
                                 successes,
                                 reads,
                                 read_successes,
-                                np.std(ops, ddof=1), np.mean(ops), min(ops), max(ops),
-                                np.std(suc, ddof=1), np.mean(suc), min(suc), max(suc),
-                                np.std(rs, ddof=1), np.mean(rs), min(rs), max(rs),
-                                np.std(rsucs, ddof=1), np.mean(rsucs), min(rsucs), max(rsucs),
+                                np.std(ops, ddof=1), np.mean(
+                                    ops), min(ops), max(ops),
+                                np.std(suc, ddof=1), np.mean(
+                                    suc), min(suc), max(suc),
+                                np.std(rs, ddof=1), np.mean(
+                                    rs), min(rs), max(rs),
+                                np.std(rsucs, ddof=1), np.mean(
+                                    rsucs), min(rsucs), max(rsucs),
                                 )
                     elif m.group(1) != "Thread":
                         ops.append(float(m.group(2)))
@@ -93,13 +100,12 @@ class LatchExperiment:
         self.results.append(parse_output(result_text))
 
 
-def run_all_experiments(latches, name, *args, **kwargs):
+def run_all_experiments(latches, name, threads, *args, **kwargs):
     # Don't move this file
     repo_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
     experiments = []
 
-    threads = [1, 2, 5, 10, 20, 30, 40, 60, 80]
     labels = latches
 
     estimated_sec = prod(
@@ -196,20 +202,43 @@ def run_all_experiments(latches, name, *args, **kwargs):
 
     fig.render_to_file(f'{name}.svg')
 
-rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode', 'mcsrw_offset']
+
+rw_latches = ['optlock_st', 'omcs_offset',
+              'omcs_offset_op_read_numa_qnode', 'mcsrw_offset']
 wo_latches = ['tatas_st', 'mcs']
 
 if __name__ == '__main__':
     SECONDS = 10
-    for (r, w) in [(0, 100), (20, 80), (50, 50), (80, 20), (90, 10)]: # [(95, 5), (100, 0)]
-        latches = rw_latches + wo_latches if r == 0 else rw_latches
+    cs_cycles = 50
+    ps_cycles = 0
 
-        cs_cycles = 50
-        if r == 0:
-            run_all_experiments(latches, 'Latch-FIXED-R{}-W{}'.format(r, w),  array_size=256, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,     dist='fixed',   cs_cycles=cs_cycles, ps_cycles=0)
-        run_all_experiments(latches, 'Latch-1-Max-R{}-W{}'.format(r, w),  array_size=1, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,       dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
-        run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}'.format(r, w), array_size=1048576, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
-        MEDIUM_SIZE=30000
-        run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}'.format(MEDIUM_SIZE, r, w), array_size=MEDIUM_SIZE, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
-        run_all_experiments(latches, 'Latch-High-5-R{}-W{}'.format(r, w),    array_size=5, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
+    for (r, w) in [(0, 100)]:
+        latches = rw_latches + wo_latches
+        threads = [1, 2, 5, 10, 20, 30, 40, 60, 80]
 
+        run_all_experiments(latches, 'Latch-FIXED-R{}-W{}'.format(r, w), threads, array_size=256, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='fixed', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+
+        run_all_experiments(latches, 'Latch-1-Max-R{}-W{}'.format(r, w), threads, array_size=1, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}'.format(r, w), threads, array_size=1048576, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        MEDIUM_SIZE = 30000
+        run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}'.format(MEDIUM_SIZE, r, w), threads, array_size=MEDIUM_SIZE, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        run_all_experiments(latches, 'Latch-High-5-R{}-W{}'.format(r, w), threads, array_size=5, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+
+    for (r, w) in [(20, 80), (50, 50), (80, 20), (90, 10)]:  # [(95, 5), (100, 0)]
+        latches = rw_latches
+        threads = [80]
+
+        run_all_experiments(latches, 'Latch-1-Max-R{}-W{}'.format(r, w), threads, array_size=1, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}'.format(r, w), threads, array_size=1048576, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        MEDIUM_SIZE = 30000
+        run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}'.format(MEDIUM_SIZE, r, w), threads, array_size=MEDIUM_SIZE, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
+        run_all_experiments(latches, 'Latch-High-5-R{}-W{}'.format(r, w), threads, array_size=5, seconds=SECONDS,
+                            ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=ps_cycles)
