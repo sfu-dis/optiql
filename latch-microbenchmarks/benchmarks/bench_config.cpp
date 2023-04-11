@@ -8,6 +8,7 @@
 #if defined(MCSRW_LOCK_ONLY)
 #include "latches/MCSRW.h"
 #endif
+#include "latches/STDRW.h"
 #include "bench_config.hpp"
 #include "distribution.hpp"
 #include "common/delay.h"
@@ -214,3 +215,4 @@ template class Bench<omcs_impl::OMCSLock>;
 #if defined(MCSRW_LOCK_ONLY)
 template class Bench<mcsrw::MCSRWLock>;
 #endif
+template class Bench<std_lock::STDRWLock>;

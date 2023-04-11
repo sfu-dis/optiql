@@ -39,3 +39,6 @@ target_link_libraries(mcs_bench gtest glog gflags perf pthread numa)
 add_executable(mcsrw_offset_bench bench_config.cpp mcsrw_bench.cpp)
 target_compile_definitions(mcsrw_offset_bench PUBLIC MCSRW_LOCK_ONLY OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE)
 target_link_libraries(mcsrw_offset_bench gtest glog gflags perf pthread numa)
+
+add_executable(stdrw_bench bench_config.cpp stdrw_bench.cpp)
+target_link_libraries(stdrw_bench gtest glog gflags perf pthread numa)

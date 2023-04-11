@@ -203,8 +203,8 @@ def run_all_experiments(latches, name, threads, *args, **kwargs):
     fig.render_to_file(f'{name}.svg')
 
 
-rw_latches = ['optlock_st', 'omcs_offset',
-              'omcs_offset_op_read_numa_qnode', 'mcsrw_offset']
+rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode',
+              'stdrw', 'mcsrw_offset']
 wo_latches = ['tatas_st', 'mcs']
 
 if __name__ == '__main__':
