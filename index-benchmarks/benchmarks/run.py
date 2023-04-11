@@ -301,23 +301,23 @@ if __name__ == '__main__':
     #threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
     threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
     # dense
-    run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
+    # run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+    #                     read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
     run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('scalability', 'Read-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=1.0, distribution='UNIFORM')
+    # run_all_experiments('scalability', 'Read-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+    #                     read_ratio=1.0, distribution='UNIFORM')
     run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('scalability', 'Write-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.2, update_ratio=0.8, distribution='UNIFORM')
+    # run_all_experiments('scalability', 'Write-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+    #                     read_ratio=0.2, update_ratio=0.8, distribution='UNIFORM')
     run_all_experiments('scalability', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
 
-    run_all_experiments('scalability', 'Read-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.8, update_ratio=0.2, distribution='UNIFORM')
+    # run_all_experiments('scalability', 'Read-heavy-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+    #                     read_ratio=0.8, update_ratio=0.2, distribution='UNIFORM')
     run_all_experiments('scalability', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
 
@@ -327,16 +327,30 @@ if __name__ == '__main__':
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
 
     # sparse, skewed
-    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
-                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
-                        read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    indexes = [
+        'artolc_upgrade',
+        'artomcs_offset',
+        'artomcs_op_read',
+        'artlc_stdrw',
+        'artlc_mcsrw',
+    ]
+    labels = [
+        'ART OptLock',
+        'ART OptiQL-NOR',
+        'ART OptiQL',
+        'ART STDRW',
+        'ART MCSRW',
+    ]
+    # run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    #                     read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+    # run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    #                     read_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
     run_all_experiments('scalability', 'Write-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=0.2, update_ratio=0.8, distribution='SELFSIMILAR', skew=0.2)
     run_all_experiments('scalability', 'Read-heavy-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
                         read_ratio=0.8, update_ratio=0.2, distribution='SELFSIMILAR', skew=0.2)
-    run_all_experiments('scalability', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
-                        read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
+    # run_all_experiments('scalability', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS, dense=False,
+    #                     read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
 
     # page size, dense, skewed
     index_bases = [
