@@ -29,4 +29,4 @@ printed_contentions = {
     "Low-1M": "Low",
 }
 
-markers = ['v', '^', 'o', 'P', 'd', '>']
+markers = ['v', '^', 'o', '*', 'd', '>', 'P']

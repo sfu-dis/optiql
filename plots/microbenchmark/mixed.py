@@ -20,7 +20,7 @@ def parse_output(text):
 
 def load(base_dir, name, latches, rw_ratios, threads):
     dfs = []
-    REPLICAS = 2
+    REPLICAS = 1
     for latch in latches:
 
         for replica in range(1, REPLICAS+1):
@@ -67,10 +67,10 @@ def plot(base_dir):
 
             if i == 0:
                 if j == 0:
-                    fig.text(0.33, 0.85, printed_contentions[contention], va='center', rotation='horizontal')
+                    fig.text(0.33, 0.84, printed_contentions[contention], va='center', rotation='horizontal')
                     ax.set_ylim([0, 7_500_000])
                 else:
-                    fig.text(0.89, 0.6, printed_contentions[contention], va='center', rotation='horizontal')
+                    fig.text(0.62, 0.84, printed_contentions[contention], va='center', rotation='horizontal')
                     ax.set_ylim([0, 23_000_000])
             else:
                 if j == 0:
