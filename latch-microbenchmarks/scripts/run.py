@@ -196,7 +196,7 @@ def run_all_experiments(latches, name, *args, **kwargs):
 
     fig.render_to_file(f'{name}.svg')
 
-rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
+rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode', 'mcsrw_offset_op_read_numa_qnode']
 wo_latches = ['tatas_st', 'mcs']
 
 if __name__ == '__main__':

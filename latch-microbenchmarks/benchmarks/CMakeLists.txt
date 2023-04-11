@@ -35,3 +35,11 @@ target_link_libraries(tatas_st_bench gtest glog gflags perf pthread numa)
 
 add_executable(mcs_bench bench_config.cpp mcs_bench.cpp)
 target_link_libraries(mcs_bench gtest glog gflags perf pthread numa)
+
+add_executable(mcsrw_offset_bench bench_config.cpp mcsrw_bench.cpp)
+target_compile_definitions(mcsrw_offset_bench PUBLIC MCSRW_LOCK_ONLY OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE)
+target_link_libraries(mcsrw_offset_bench gtest glog gflags perf pthread numa)
+
+add_executable(mcsrw_offset_op_read_numa_qnode_bench bench_config.cpp mcsrw_bench.cpp)
+target_compile_definitions(mcsrw_offset_op_read_numa_qnode_bench PUBLIC MCSRW_LOCK_ONLY OMCS_OP_READ OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE)
+target_link_libraries(mcsrw_offset_op_read_numa_qnode_bench gtest glog gflags perf pthread numa)

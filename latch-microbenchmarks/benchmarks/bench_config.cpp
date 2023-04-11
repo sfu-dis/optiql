@@ -5,6 +5,9 @@
 #include "latches/MCS.h"
 #include "latches/TATAS.h"
 #include "latches/OMCSImpl.h"
+#if defined(MCSRW_LOCK_ONLY)
+#include "latches/MCSRW.h"
+#endif
 #include "bench_config.hpp"
 #include "distribution.hpp"
 #include "common/delay.h"
@@ -208,3 +211,6 @@ Bench<Latch>::Bench() : PerformanceTest(FLAGS_threads, FLAGS_seconds) {
 template class Bench<mcs::MCSLock>;
 template class Bench<TATAS>;
 template class Bench<omcs_impl::OMCSLock>;
+#if defined(MCSRW_LOCK_ONLY)
+template class Bench<mcsrw::MCSRWLock>;
+#endif
