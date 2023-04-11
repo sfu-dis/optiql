@@ -201,12 +201,13 @@ wo_latches = ['tatas_st', 'mcs']
 
 if __name__ == '__main__':
     SECONDS = 10
-    for (r, w) in [(0, 100), (20, 80),(50, 50), (80, 20), (90, 10), (95, 5), (100, 0)]:
+    for (r, w) in [(0, 100), (20, 80), (50, 50), (80, 20), (90, 10)]: # [(95, 5), (100, 0)]
         latches = rw_latches + wo_latches if r == 0 else rw_latches
 
         cs_cycles = 50
+        if r == 0:
+            run_all_experiments(latches, 'Latch-FIXED-R{}-W{}'.format(r, w),  array_size=256, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,     dist='fixed',   cs_cycles=cs_cycles, ps_cycles=0)
         run_all_experiments(latches, 'Latch-1-Max-R{}-W{}'.format(r, w),  array_size=1, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,       dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
-        run_all_experiments(latches, 'Latch-FIXED-R{}-W{}'.format(r, w),  array_size=256, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,     dist='fixed',   cs_cycles=cs_cycles, ps_cycles=0)
         run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}'.format(r, w), array_size=1048576, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
         MEDIUM_SIZE=30000
         run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}'.format(MEDIUM_SIZE, r, w), array_size=MEDIUM_SIZE, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)

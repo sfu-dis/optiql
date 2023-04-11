@@ -8,12 +8,14 @@ printed_ratios = {
     "R95-W5": "95/5",
     }
 
-rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
+rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode',
+              'mcsrw_offset_op_read_numa_qnode']
 wo_latches = ['tatas_st', 'mcs']
 printed_latches = {
     'optlock_st': 'OptLock',
     'omcs_offset': 'OptiQL-NOR',
     'omcs_offset_op_read_numa_qnode': 'OptiQL',
+    'mcsrw_offset_op_read_numa_qnode': 'MCS-RW',
     'tatas_st': 'TTS',
     'mcs': 'MCS',
     }

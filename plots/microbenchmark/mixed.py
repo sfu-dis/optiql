@@ -92,9 +92,9 @@ def plot(base_dir):
 
     lines, _ = axs[0, 0].get_legend_handles_labels()
     labels = [printed_latches[latch] for latch in rw_latches]
-    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='upper right', bbox_to_anchor=(0.9, 1.06), ncol=len(rw_latches), frameon=False)
+    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='center', bbox_to_anchor=(0.5, 1.01), ncol=len(rw_latches), frameon=False)
     
-    fig.text(-0.04, 0.45, "Throughput (million ops/s)", va='center', rotation='vertical')
+    fig.text(-0.04, 0.45, "Million ops/s", va='center', rotation='vertical')
 
     fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05, top=0.9, hspace=0.4, wspace=0.25)
     plt.savefig(f'mixed.pdf', format='pdf', bbox_inches='tight', pad_inches=0)

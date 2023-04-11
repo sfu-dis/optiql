@@ -73,9 +73,11 @@ def plot():
 
 
     lines, labels = axs[0].get_legend_handles_labels()
-    fig.legend(lines, labels, loc='upper right', bbox_to_anchor=(0.83, 1.2), ncol=7, frameon=False)
+    # fig.legend(lines, labels, loc='upper right', bbox_to_anchor=(0.83, 1.2), ncol=7, frameon=False)
+    fig.legend(lines, labels, loc='center', bbox_to_anchor=(
+        0.5, 1.05), ncol=len(rw_latches + wo_latches), frameon=False)
 
-    axs[0].set_ylabel("Throughput (Mops/s)")
+    axs[0].set_ylabel("Million ops/s")
 
     fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05, top=0.9, hspace=0.2, wspace=0.25)
     plt.savefig(f'scalability.pdf', format='pdf', bbox_inches='tight', pad_inches=0)
