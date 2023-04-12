@@ -20,7 +20,7 @@ def parse_output(text):
 
 def load(base_dir, name, latches, rw_ratios, cs_cycles, threads):
     dfs = []
-    REPLICAS = 2
+    REPLICAS = 3
     for latch in latches:
         rw_ratio = "R90-W10"
         for replica in range(1, REPLICAS+1):
@@ -99,7 +99,7 @@ def plot(base_dir):
     fig.text(-0.04, 0.45, "Throughput (million ops/s)", va='center', rotation='vertical')
 
     fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05, top=0.9, hspace=0.4, wspace=0.25)
-    plt.savefig(f'mixed.pdf', format='pdf', bbox_inches='tight', pad_inches=0)
+    plt.savefig(f'sensitivity.pdf', format='pdf', bbox_inches='tight', pad_inches=0)
 
 
 if __name__ == '__main__':
