@@ -35,7 +35,7 @@ def load(base_dir, name, latches, rw_ratios, cs_cycles, threads):
     return pd.concat(dfs, ignore_index=True)
 
 mixed_rw_ratios = rw_ratios + ["R90-W10"] # ["R90-W10", "R95-W5"]
-cs_cycles = [25, 50, 75, 100]
+cs_cycles = [5, 10, 15, 20, 25, 50, 75, 100, 125, 150, 200]
 
 def plot(base_dir):
     # plt.rcParams.update({'font.size': 8})
@@ -63,27 +63,29 @@ def plot(base_dir):
                                 linewidth=1,
                                 marker=markers[k], markersize=6, markeredgecolor="black", markeredgewidth=0.3)
             # g.set_xticklabels([printed_ratios[ratio] for ratio in mixed_rw_ratios])
-            g.set_xticklabels(cs_cycles)
+            printed_cs_cycles = [5, 25, 50, 100, 150, 200]
+            g.set_xticks(printed_cs_cycles)
+            g.set_xticklabels(printed_cs_cycles)
             #g.set_title(printed_contentions[contention])
 
 
             if i == 0:
                 if j == 0:
                     fig.text(0.33, 0.85, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 7_500_000])
+                    ax.set_ylim([0, 18_000_000])
                 else:
                     fig.text(0.89, 0.6, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 23_000_000])
+                    ax.set_ylim([0, 38_000_000])
             else:
                 if j == 0:
                     fig.text(0.33, 0.1, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 675_000_000])
+                    ax.set_ylim([0, 1_100_000_000])
                 else:
                     fig.text(0.89, 0.1, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 475_000_000])
+                    ax.set_ylim([0, 640_000_000])
 
             if i == 1:
-                g.set_xlabel("Read/write ratio")
+                g.set_xlabel("Critical section cycles")
             else:
                 g.set_xlabel("")
             g.set_ylabel("")
