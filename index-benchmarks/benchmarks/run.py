@@ -271,6 +271,22 @@ if __name__ == '__main__':
     except:
         print(f'Raw data directory already exists')
 
+    # collapse
+    indexes = [
+        'btreeolc_upgrade',
+        'btreeomcs_leaf_op_read',
+    ]
+    labels = [
+        'B+-tree OptLock',
+        'B+-tree OptiQL',
+    ]
+    threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
+    # dense
+    run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
+    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+
     # scalability
     indexes = [
         'btreeolc_upgrade',
