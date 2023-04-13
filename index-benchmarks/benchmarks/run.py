@@ -23,7 +23,7 @@ data_dir = os.path.join(base_repo_dir, 'plots', 'index', 'data')
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 3
+    NUM_REPLICATES = 10
     opTypes = ['Insert', 'Read', 'Update', 'Remove', 'Scan']
     finishTypes = ['completed', 'succeeded']
 

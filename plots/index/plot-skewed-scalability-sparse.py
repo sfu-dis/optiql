@@ -60,7 +60,7 @@ x_labels = [1, 20, 40, 60, 80]
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 3
+    NUM_REPLICATES = 10
 
 
 if __name__ == '__main__':
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
         lines, _ = axs[0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.5, 1.25), ncol=3, frameon=False, handletextpad=0.5, columnspacing=0.7)
+            0.44, 1.25), ncol=3, frameon=False, handletextpad=0.5, columnspacing=0.7)
 
         # fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 

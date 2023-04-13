@@ -43,7 +43,7 @@ legends = [f'{t} threads' for t in threads]
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 3
+    NUM_REPLICATES = 10
 
 
 if __name__ == '__main__':
@@ -118,7 +118,7 @@ if __name__ == '__main__':
 
         lines, _ = axs[0].get_legend_handles_labels()
         fig.legend(lines, legends, loc='center', bbox_to_anchor=(
-            0.4, 1.15), ncol=len(legends), frameon=False, handletextpad=0.5, columnspacing=0.7)
+            0.45, 1.15), ncol=len(legends), frameon=False, handletextpad=0.5, columnspacing=0.7)
 
         # fig.text(0.01, 0.5, "Million ops/s", va='center', rotation='vertical')
 
