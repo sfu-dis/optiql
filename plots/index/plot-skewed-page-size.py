@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     # start plotting
     def plot_page_size(key_type='dense-int'):
-        nrows = 1
+        nrows = 2
         ncols = 3
 
         dataframe = pd.read_csv(os.path.join(
@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
         distributions = ['selfsimilar', 'selfsimilar', 'selfsimilar']
         skew_factors = [0.2]
-        ylabels = ['Million ops/s\nB+-tree, 40 threads']
+        ylabels = ['Million ops/s', 'Normalized']
         threads = [40]
 
         titles = ['Read-heavy', 'Balanced', 'Write-heavy']
@@ -89,21 +89,21 @@ if __name__ == '__main__':
         update_ratios = [0.2, 0.5, 0.8]
 
         fig, axs = plt.subplots(nrows, ncols)
-        fig.set_size_inches(4.5, 0.9, forward=True)
+        fig.set_size_inches(4.5, 2.0, forward=True)
         fig.subplots_adjust(wspace=0.25)  # space between subfigs
 
         for r in range(nrows):
             for c in range(ncols):
-                ax = axs[c]
+                ax = axs[r, c]
 
                 df = dataframe[(dataframe['exp'] == 'page-size')
                                & (dataframe['key-type'] == key_type)
                                & (dataframe['index'].isin(indexes))
-                               & (dataframe['distribution'] == distributions[r])
-                               & (dataframe['skew-factor'] == skew_factors[r])
+                               & (dataframe['distribution'] == distributions[0])
+                               & (dataframe['skew-factor'] == skew_factors[0])
                                & (dataframe['Read-ratio'] == read_ratios[c])
                                & (dataframe['Update-ratio'] == update_ratios[c])
-                               & (dataframe['thread'] == threads[r])]
+                               & (dataframe['thread'] == threads[0])]
 
                 df1 = df[['index', 'page_size', 'replicate', 'succeeded']]
                 assert(df1.shape[0] == len(page_sizes) *
@@ -132,8 +132,11 @@ if __name__ == '__main__':
                 # markers = ['^', 'o', '*']
                 palette = sns.color_palette()
                 for i, index in enumerate(indexes):
-                    # line = df1[df1['index'] == index]
-                    line = dfs[i]
+                    line = None
+                    if r == 0:
+                        line = df1[df1['index'] == index]
+                    elif r == 1:
+                        line = dfs[i]
                     g = sns.lineplot(data=line, x='page_size', y='succeeded',
                                      marker=markers[i], markersize=6, color=palette[i],
                                      linewidth=1, markeredgecolor='black', markeredgewidth=0.3,
@@ -145,22 +148,29 @@ if __name__ == '__main__':
                 g.get_xaxis().set_tick_params(which='minor', width=0)
 
                 ax.grid(axis='y', alpha=0.4)
-                ax.yaxis.set_major_locator(ticker.FixedLocator([0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4]))
+                if r == 1:
+                    ax.yaxis.set_major_locator(ticker.FixedLocator([0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4]))
                 ax.set_xlabel("")
                 ax.set_ylabel("")
                 if r == 0:
                     ax.set_title(titles[c], fontsize=10)
                 if c == 0:
                     ax.set_ylabel(ylabels[r])
-                if r == 0:
+                if r == 1:
                     ax.set_xlabel("Node size")
 
-                # ticks_y = ticker.FuncFormatter(
-                #     lambda x, pos: '{0:g}'.format(x/1e6))
-                # ax.yaxis.set_major_formatter(ticks_y)
-                ax.set_ylim([0, 1.5])
+                if r == 0:
+                    ticks_y = ticker.FuncFormatter(
+                        lambda x, pos: '{0:g}'.format(x/1e6))
+                    ax.yaxis.set_major_formatter(ticks_y)
+                if r == 1:
+                    ax.set_ylim([0, 1.5])
                 for tick in ax.get_xticklabels():
                     tick.set_rotation(45)
+
+            axs[0, 0].set_ylim([0, 75_000_000])
+            axs[0, 1].set_ylim([0, 40_000_000])
+            axs[0, 2].set_ylim([0, 40_000_000])
 
         # if key_type == 'dense-int':
         #     axs[0, 0].set_ylim([0, 125_000_000])
@@ -170,14 +180,14 @@ if __name__ == '__main__':
         #     axs[1, 1].set_ylim([0, 80_000_000])
         #     axs[1, 2].set_ylim([0, 50_000_000])
 
-        lines, _ = axs[0].get_legend_handles_labels()
+        lines, _ = axs[0, 0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.48, 1.25), ncol=len(latch_labels), frameon=False)
+            0.48, 1.05), ncol=len(latch_labels), frameon=False)
 
-        # fig.text(0.01, 0.5, "", va='center', rotation='vertical')
+        fig.text(-0.05, 0.5, "B+-tree, 40 threads", va='center', rotation='vertical')
 
         fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
-                            top=0.9, hspace=0.4, wspace=0.25)
+                            top=0.9, hspace=0.5, wspace=0.25)
         savefig(plt, 'Page-size-skewed')
 
     plt.rcParams.update({'font.size': 10})
