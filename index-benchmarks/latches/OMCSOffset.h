@@ -77,11 +77,13 @@ inline void init_qnodes() {
     abort();
   }
 #else
-  int ret = posix_memalign((void **)&base_qnode, CACHELINE_SIZE * 2,
-                           sizeof(QNode) * Lock::kNumQueueNodes);
-  if (ret) {
-    abort();
-  }
+  // int ret = posix_memalign((void **)&base_qnode, CACHELINE_SIZE * 2,
+  //                          sizeof(QNode) * Lock::kNumQueueNodes);
+  // if (ret) {
+  //   abort();
+  // }
+  int node = 0;
+  base_qnode = (QNode *)numa_alloc_onnode(sizeof(QNode) * Lock::kNumQueueNodes, node);
 
   for (uint32_t i = 0; i < Lock::kNumQueueNodes; ++i) {
     new (base_qnode + i) QNode;
