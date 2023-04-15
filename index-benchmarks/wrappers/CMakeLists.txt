@@ -70,6 +70,20 @@ foreach(page_size page_size_suffix IN ZIP_LISTS page_sizes page_size_suffixes)
   )
 
   add_wrapper(
+    NAME btreeomcs_leaf_offset_gnp${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OFFSET BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
+
+  add_wrapper(
+    NAME btreeomcs_leaf_op_read_gnp${page_size_suffix}
+    SOURCE btreeolc_wrapper.cpp
+    DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OP_READ OMCS_OFFSET BTREE_PAGE_SIZE=${page_size}
+    LIBRARIES numa
+  )
+
+  add_wrapper(
     NAME btreeomcs_leaf_offset${page_size_suffix}
     SOURCE btreeolc_wrapper.cpp
     DEFINITIONS OMCS_LOCK BTREE_OMCS_LEAF_ONLY OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE BTREE_PAGE_SIZE=${page_size}
@@ -201,6 +215,20 @@ add_wrapper(
   SOURCE artolc_wrapper.cpp
   DEFINITIONS OMCS_LOCK IS_CONTEXTFUL
   LIBRARIES artomcs tbb
+)
+
+add_wrapper(
+  NAME artomcs_offset_gnp
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OFFSET
+  LIBRARIES artomcs_offset_gnp tbb numa
+)
+
+add_wrapper(
+  NAME artomcs_op_read_gnp
+  SOURCE artolc_wrapper.cpp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OP_READ OMCS_OFFSET
+  LIBRARIES artomcs_op_read_gnp tbb numa
 )
 
 add_wrapper(

@@ -35,6 +35,16 @@ add_libart(
 )
 
 add_libart(
+  NAME artomcs_offset_gnp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OFFSET
+)
+
+add_libart(
+  NAME artomcs_op_read_gnp
+  DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OP_READ OMCS_OFFSET
+)
+
+add_libart(
   NAME artomcs_offset
   DEFINITIONS OMCS_LOCK IS_CONTEXTFUL OMCS_OFFSET OMCS_OFFSET_NUMA_QNODE
 )
