@@ -49,7 +49,7 @@ art_labels = [label for label in labels if 'ART' in label]
 # latch_labels = ['OptiQL-NOR', 'OptiQL', 'OptiQL-NOR-GNP', 'OptiQL-GNP']
 # latch_labels = ['Interleaved (OptiQL-NOR)', 'Node 0 (OptiQL-NOR)',
 #                 'Interleaved (OptiQL)', 'Node 0 (OptiQL)']
-latch_labels = ['Interleaved', 'Node 0']
+latch_labels = ['Node 0', 'Interleaved']
 # latch_labels += ['BwTree']
 
 # threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
@@ -76,11 +76,13 @@ if __name__ == '__main__':
         dataframe = pd.read_csv(os.path.join(
             'data', 'All.csv')).iloc[:, 1:]
 
-        markers = ['v', '^', 'o', '*', 'd', '>', 'P', 'd', 'h']
+        palette = sns.color_palette()
+        palette = [palette[4], palette[2]]
+        markers = ['P', 'o']
 
         indexes = [
-            ['btreeomcs_leaf_op_read', 'btreeomcs_leaf_op_read_gnp'],
-            ['artomcs_op_read', 'artomcs_op_read_gnp'],
+            ['btreeomcs_leaf_op_read_gnp', 'btreeomcs_leaf_op_read'],
+            ['artomcs_op_read_gnp', 'artomcs_op_read'],
         ]
         # labels = [btree_labels, art_labels]
         distributions = ['selfsimilar', 'selfsimilar']
@@ -115,7 +117,7 @@ if __name__ == '__main__':
                 for i, index in enumerate(indexes[c]):
                     line = df1[df1['index'] == index]
                     g = sns.lineplot(data=line, x='thread', y='succeeded',
-                                     marker=markers[i], markersize=6,
+                                     marker=markers[i], markersize=6, color=palette[i],
                                      linewidth=1, markeredgecolor='black', markeredgewidth=0.3,
                                      ax=ax, label=latch_labels[i], legend=False)
                 #g = sns.lineplot(data=df1, ax=ax, legend=False)
