@@ -20,7 +20,7 @@ def relative_stddev(x):
     return np.std(x, ddof=1) / np.mean(x) * 100
 
 class LatchExperiment:
-    NUM_REPLICATES = 3
+    NUM_REPLICATES = 20
 
     def __init__(self, name, latch, bench_bin, **kwargs):
         self.bench_bin = bench_bin
@@ -205,14 +205,15 @@ if __name__ == '__main__':
     # (r, w) = (90, 10)
     # cs_cycles = 50
     # for (r, w) in [(0, 100), (20, 80),(50, 50), (80, 20), (90, 10), (95, 5), (100, 0)]:
+    cs_cycles_list = [5, 15, 25, 50, 75, 100, 125, 150, 200]
     for (r, w) in [(50, 50), (80, 20), (90, 10)]:
-        for cs_cycles in [5, 10, 15, 20, 25, 50, 75, 100, 125, 150, 200]:
-            latches = rw_latches + wo_latches if r == 0 else rw_latches
+        for cs_cycles in cs_cycles_list:
+            latches = rw_latches
 
             run_all_experiments(latches, 'Latch-1-Max-R{}-W{}-CS{}'.format(r, w, cs_cycles),  array_size=1, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,       dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
             # run_all_experiments(latches, 'Latch-FIXED-R{}-W{}-CS{}'.format(r, w, cs_cycles),  array_size=256, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,     dist='fixed',   cs_cycles=cs_cycles, ps_cycles=0)
-            run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}-CS{}'.format(r, w, cs_cycles), array_size=1048576, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
+            # run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}-CS{}'.format(r, w, cs_cycles), array_size=1048576, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
             MEDIUM_SIZE=30000
-            run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}-CS{}'.format(MEDIUM_SIZE, r, w, cs_cycles), array_size=MEDIUM_SIZE, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
+            # run_all_experiments(latches, 'Latch-Medium-{}-R{}-W{}-CS{}'.format(MEDIUM_SIZE, r, w, cs_cycles), array_size=MEDIUM_SIZE, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
             run_all_experiments(latches, 'Latch-High-5-R{}-W{}-CS{}'.format(r, w, cs_cycles),    array_size=5, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w,      dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
 

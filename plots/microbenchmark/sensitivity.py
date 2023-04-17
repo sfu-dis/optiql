@@ -20,7 +20,7 @@ def parse_output(text):
 
 def load(base_dir, name, latches, rw_ratio, cs_cycles, threads):
     dfs = []
-    REPLICAS = 3
+    REPLICAS = 20
     for latch in latches:
         for replica in range(1, REPLICAS+1):
             for cs in cs_cycles:
@@ -39,6 +39,7 @@ printed_cs_cycles = [5, 25, 50, 100, 150, 200]
 contentions = ["1-Max", "High-5"]
 printed_rw_ratios = ["50/50", "80/20", "90/10"]
 rw_ratios = ["R50-W50", "R80-W20", "R90-W10"]
+rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
 def plot(base_dir):
     # plt.rcParams.update({'font.size': 8})
     plt.rcParams['text.usetex'] = True
