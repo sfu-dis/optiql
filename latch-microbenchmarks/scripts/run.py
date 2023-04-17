@@ -22,7 +22,7 @@ def relative_stddev(x):
 
 
 class LatchExperiment:
-    NUM_REPLICATES = 10
+    NUM_REPLICATES = 20
 
     def __init__(self, name, latch, bench_bin, **kwargs):
         self.bench_bin = bench_bin

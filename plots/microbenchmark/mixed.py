@@ -20,7 +20,7 @@ def parse_output(text):
 
 def load(base_dir, name, latches, rw_ratios, threads):
     dfs = []
-    REPLICAS = 10
+    REPLICAS = 20
     for latch in latches:
 
         for replica in range(1, REPLICAS+1):
