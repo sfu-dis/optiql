@@ -43,7 +43,7 @@ legends = [f'{t} threads' for t in threads]
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 10
+    NUM_REPLICATES = 20
 
 
 if __name__ == '__main__':
