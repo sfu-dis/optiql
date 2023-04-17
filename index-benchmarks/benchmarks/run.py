@@ -418,4 +418,18 @@ if __name__ == '__main__':
     run_all_experiments('page-size', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
 
+    # qnode pool
+    indexes = [
+        'btreeomcs_leaf_op_read_gnp',
+        'artomcs_op_read_gnp',
+    ]
+    labels = [
+        'B+-tree OptiQL-GNP',
+        'ART OptiQL-GNP',
+    ]
+    threads = [1, 5, 10, 20, 30, 40, 50, 60, 70, 80]
+    # dense
+    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
+
     dataframe.to_csv(os.path.join(data_dir, 'All.csv'))
