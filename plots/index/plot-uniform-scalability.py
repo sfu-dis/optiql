@@ -60,7 +60,7 @@ x_labels = [1, 20, 40, 60, 80]
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 10
+    NUM_REPLICATES = 20
 
 
 if __name__ == '__main__':

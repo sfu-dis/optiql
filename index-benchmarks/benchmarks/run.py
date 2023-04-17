@@ -23,7 +23,7 @@ data_dir = os.path.join(base_repo_dir, 'plots', 'index', 'data')
 
 
 class PiBenchExperiment:
-    NUM_REPLICATES = 10
+    NUM_REPLICATES = 20
     opTypes = ['Insert', 'Read', 'Update', 'Remove', 'Scan']
     finishTypes = ['completed', 'succeeded']
 
@@ -280,6 +280,7 @@ if __name__ == '__main__':
         'B+-tree OptLock',
         'B+-tree OptiQL',
     ]
+    #threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
     threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
     # dense
     run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
@@ -287,7 +288,7 @@ if __name__ == '__main__':
     run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
-    # scalability
+    # scalability, read-only or read-write
     indexes = [
         'btreeolc_upgrade',
         'btreeomcs_leaf_offset',
@@ -314,14 +315,7 @@ if __name__ == '__main__':
         'ART MCSRW',
         'Bw-Tree',
     ]
-    #threads = [1, 2, 5, 10, 15, 18, 20, 22, 25, 30, 32, 35, 40, 50, 60, 70, 80]
-    threads = [1, 2, 5, 10, 16, 20, 30, 40, 50, 60, 70, 80]
     # dense
-    # run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-    #                     read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
-    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
-                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
-
     # run_all_experiments('scalability', 'Read-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
     #                     read_ratio=1.0, distribution='UNIFORM')
     run_all_experiments('scalability', 'Read-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
@@ -341,6 +335,35 @@ if __name__ == '__main__':
                         read_ratio=0.5, update_ratio=0.5, distribution='UNIFORM')
     run_all_experiments('scalability', 'Balanced-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
                         read_ratio=0.5, update_ratio=0.5, distribution='SELFSIMILAR', skew=0.2)
+
+    # scalability, update-only (remainder from collapse)
+    indexes = [
+        'btreeomcs_leaf_offset',
+        'btreelc_stdrw',
+        'btreelc_mcsrw',
+        'artolc_upgrade',
+        'artomcs_offset',
+        'artomcs_op_read',
+        'artlc_stdrw',
+        'artlc_mcsrw',
+        'bwtree',
+    ]
+    labels = [
+        'B+-tree OptiQL-NOR',
+        'B+-tree STDRW',
+        'B+-tree MCSRW',
+        'ART OptLock',
+        'ART OptiQL-NOR',
+        'ART OptiQL',
+        'ART STDRW',
+        'ART MCSRW',
+        'Bw-Tree',
+    ]
+    # dense
+    # run_all_experiments('scalability', 'Update-only-uniform', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+    #                     read_ratio=0.0, update_ratio=1.0, distribution='UNIFORM')
+    run_all_experiments('scalability', 'Update-only-selfsimilar', indexes, labels, threads, records=NUM_RECORDS, seconds=SECONDS,
+                        read_ratio=0.0, update_ratio=1.0, distribution='SELFSIMILAR', skew=0.2)
 
     # sparse, skewed
     indexes = [
