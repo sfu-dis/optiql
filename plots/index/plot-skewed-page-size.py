@@ -121,7 +121,7 @@ if __name__ == '__main__':
                     df_index = df_index.rename(columns={'mean': 'succeeded'})
                     dfs.append(df_index)
 
-                # use optlock as baseline
+                # use optiql as baseline
                 df_baseline = dfs[2].copy()
                 for i, index in enumerate(indexes):
                     dfs[i]['succeeded'] = dfs[i]['succeeded'] / \
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
                 ax.grid(axis='y', alpha=0.4)
                 if r == 1:
-                    ax.yaxis.set_major_locator(ticker.FixedLocator([0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4]))
+                    ax.yaxis.set_major_locator(ticker.FixedLocator([0.25, 0.5, 0.75, 1.0, 1.25, 1.5]))
                 ax.set_xlabel("")
                 ax.set_ylabel("")
                 if r == 0:
@@ -182,12 +182,12 @@ if __name__ == '__main__':
 
         lines, _ = axs[0, 0].get_legend_handles_labels()
         fig.legend(lines, latch_labels, loc='center', bbox_to_anchor=(
-            0.48, 1.05), ncol=len(latch_labels), frameon=False)
+            0.46, 1.05), ncol=len(latch_labels), frameon=False)
 
-        fig.text(-0.05, 0.5, "B+-tree, 40 threads", va='center', rotation='vertical')
+        fig.text(-0.07, 0.5, "B+-tree, 40 threads", va='center', rotation='vertical')
 
         fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
-                            top=0.9, hspace=0.5, wspace=0.25)
+                            top=0.9, hspace=0.5, wspace=0.35)
         savefig(plt, 'Page-size-skewed')
 
     plt.rcParams.update({'font.size': 10})
