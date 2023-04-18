@@ -37,8 +37,10 @@ def load(base_dir, name, latches, rw_ratio, cs_cycles, threads):
 cs_cycles = [5, 15, 25, 50, 75, 100, 125, 150, 200]
 printed_cs_cycles = [5, 25, 50, 100, 150, 200]
 contentions = ["1-Max", "High-5"]
-printed_rw_ratios = ["50/50", "80/20", "90/10"]
-rw_ratios = ["R50-W50", "R80-W20", "R90-W10"]
+# printed_rw_ratios = ["50/50", "80/20", "90/10"]
+# rw_ratios = ["R50-W50", "R80-W20", "R90-W10"]
+printed_rw_ratios = ["20/80", "50/50", "80/20"]
+rw_ratios = ["R20-W80", "R50-W50", "R80-W20"]
 rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
 def plot(base_dir):
     # plt.rcParams.update({'font.size': 8})
@@ -71,24 +73,24 @@ def plot(base_dir):
             if i == 0:
                 if j == 0:
                     fig.text(0.33, 0.86, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 8_000_000])
+                    ax.set_ylim([0, 9_000_000])
                 else:
                     fig.text(0.89, 0.86, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 22_000_000])
+                    ax.set_ylim([0, 24_000_000])
             elif i == 1:
                 if j == 0:
                     fig.text(0.33, 0.55, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 14_000_000])
+                    ax.set_ylim([0, 9_000_000])
                 else:
                     fig.text(0.89, 0.55, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 30_000_000])
+                    ax.set_ylim([0, 24_000_000])
             else:
                 if j == 0:
                     fig.text(0.33, 0.24, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 18_000_000])
+                    ax.set_ylim([0, 15_000_000])
                 else:
                     fig.text(0.89, 0.24, printed_contentions[contention], va='center', rotation='horizontal')
-                    ax.set_ylim([0, 38_000_000])
+                    ax.set_ylim([0, 32_000_000])
 
 
             if i == 2:
@@ -107,13 +109,13 @@ def plot(base_dir):
 
     lines, _ = axs[0, 0].get_legend_handles_labels()
     labels = [printed_latches[latch] for latch in rw_latches]
-    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='upper right', bbox_to_anchor=(0.9, 1), ncol=len(rw_latches), frameon=False)
+    fig.legend(lines, labels, handletextpad=0.5, columnspacing=0.7, loc='upper right', bbox_to_anchor=(0.9, 1.02), ncol=len(rw_latches), frameon=False)
     
-    fig.text(-0.01, 0.45, "Throughput (million ops/s)", va='center', rotation='vertical')
+    fig.text(-0.01, 0.45, "Million ops/s", va='center', rotation='vertical')
     
     fig.text(1.03, 0.45, "Read/write ratio", va='center', rotation='vertical')
 
-    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05, top=0.9, hspace=0.4, wspace=0.17)
+    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05, top=0.9, hspace=0.4, wspace=0.25)
     plt.savefig(f'sensitivity.pdf', format='pdf', bbox_inches='tight', pad_inches=0)
 
 

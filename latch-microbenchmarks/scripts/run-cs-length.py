@@ -206,7 +206,7 @@ if __name__ == '__main__':
     # cs_cycles = 50
     # for (r, w) in [(0, 100), (20, 80),(50, 50), (80, 20), (90, 10), (95, 5), (100, 0)]:
     cs_cycles_list = [5, 15, 25, 50, 75, 100, 125, 150, 200]
-    for (r, w) in [(50, 50), (80, 20), (90, 10)]:
+    for (r, w) in [(20, 80), (50, 50), (80, 20)]:
         for cs_cycles in cs_cycles_list:
             latches = rw_latches
 
