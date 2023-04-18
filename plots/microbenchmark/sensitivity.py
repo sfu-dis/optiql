@@ -40,7 +40,7 @@ def load(base_dir, name, latches, rw_ratio, cs_cycles, threads):
 
 # all_cs_cycles = [5, 10, 15, 20, 25, 50, 75, 100, 125, 150, 200]
 cs_cycles = [5, 15, 25, 50, 75, 100, 125, 150, 200]
-printed_cs_cycles = [5, 25, 50, 100, 150, 200]
+printed_cs_cycles = [5, 50, 100, 150, 200]
 contentions = ["Low-1M", "High-5", "High-5"]
 printed_rw_ratios = ["80/20", "80/20", "20/80"]
 rw_ratios = ["R80-W20", "R80-W20", "R20-W80"]
