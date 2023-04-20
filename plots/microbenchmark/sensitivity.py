@@ -53,9 +53,9 @@ def plot(base_dir):
     plt.rcParams['text.latex.preamble'] = '\\usepackage{libertine}\n\\usepackage{libertinust1math}\n\\usepackage[T1]{fontenc}'
     plt.rcParams["font.family"] = "serif"
 
-    fig, axs = plt.subplots(1, 3)
-    fig.set_size_inches(4.5, 0.8, forward=True)
-    for i in range(3):
+    fig, axs = plt.subplots(1, 2)
+    fig.set_size_inches(3.3, 0.75, forward=True)
+    for i in range(2):
         for j in range(1):
             thread = 80
             rw_ratio = rw_ratios[i]
@@ -99,14 +99,16 @@ def plot(base_dir):
 
             if i == 0:
                 fig.text(
-                    0.26, 0.76, printed_contentions[contention], va='center', rotation='horizontal')
+                    0.36, 0.76, printed_contentions[contention], va='center', rotation='horizontal')
                 g.set_xlabel(
-                    "Critical section length\n(a) 80\% read, 20\% write")
+                    # "Critical section length\n(a) 80\% read, 20\% write")
+                    "Critical section length")
             if i == 1:
                 fig.text(
-                    0.58, 0.76, printed_contentions[contention], va='center', rotation='horizontal')
+                    0.88, 0.76, printed_contentions[contention], va='center', rotation='horizontal')
                 g.set_xlabel(
-                    "Critical section length\n(b) 80\% read, 20\% write")
+                    # "Critical section length\n(b) 80\% read, 20\% write")
+                    "Critical section length")
             if i == 2:
                 fig.text(
                     0.90, 0.76, printed_contentions[contention], va='center', rotation='horizontal')
@@ -125,20 +127,20 @@ def plot(base_dir):
             ax.grid(axis='y', alpha=0.4)
 
     axs[0].set_ylim([0, 600_000_000])
-    axs[1].set_ylim([0, 32_000_000])
-    axs[2].set_ylim([0, 20_000_000])
+    axs[1].set_ylim([0, 35_000_000])
+    # axs[2].set_ylim([0, 20_000_000])
 
     lines, _ = axs[0].get_legend_handles_labels()
     labels = [printed_latches[latch] for latch in rw_latches]
     fig.legend(lines, labels, loc='center', bbox_to_anchor=(
-        0.5, 1.02), ncol=len(rw_latches), frameon=False)
+        0.5, 1.1), ncol=len(rw_latches), frameon=False, handletextpad=0.5, columnspacing=0.7)
 
-    fig.text(-0.02, 0.45, "Million ops/s", va='center', rotation='vertical')
+    fig.text(-0.05, 0.45, "Million ops/s", va='center', rotation='vertical')
 
     # fig.text(1.03, 0.45, "Read/write ratio", va='center', rotation='vertical')
 
     fig.subplots_adjust(left=0.08, right=0.98, bottom=0.05,
-                        top=0.9, hspace=0.4, wspace=0.25)
+                        top=0.9, hspace=0.4, wspace=0.35)
     plt.savefig(f'sensitivity.pdf', format='pdf',
                 bbox_inches='tight', pad_inches=0)
 
