@@ -12,11 +12,13 @@ make -jN
 ./_deps/pibench-build/src/PiBench ./wrappers/libbtreeomcs_leaf_offset_wrapper.so --mode=time --pcm=False --threads=40 --records=100000000 --seconds=10 --read_ratio=0.0 --update_ratio=1.0 --distribution=SELFSIMILAR --skew=0.2 --skip_verify=True --apply_hash=False
 ```
 
+We use jemalloc for memory management. See [this](https://github.com/jemalloc/jemalloc/issues/1237) if you encounter similar issues.
+
 ## Run all benchmarks
 ```
 ../benchmarks/run.py
 ```
-You might need to install several Python dependencies.
+You might need to install several Python dependencies, including `numpy`, `pandas`, `matplotlib`, and `seaborn`.
 
 ## Wrappers
 |      Wrapper name      |                              Content                              |
