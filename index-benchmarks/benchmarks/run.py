@@ -8,16 +8,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import sys
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
-NUM_SOCKETS = 2
-NUM_CORES = 20
-
-
 base_repo_dir = os.path.dirname(os.path.dirname(
     os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(base_repo_dir)
+from common.numa import NUM_SOCKETS, NUM_CORES
+
 data_dir = os.path.join(base_repo_dir, 'plots', 'index', 'data')
 
 
