@@ -2,7 +2,7 @@
 FetchContent_Declare(
         pibench 
         GIT_REPOSITORY https://github.com/sfu-dis/pibench.git
-        GIT_TAG tls-cleanup
+        GIT_TAG optiql
 )
 FetchContent_GetProperties(pibench)
 if (NOT pibench_POPULATED)
