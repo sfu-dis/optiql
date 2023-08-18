@@ -8,7 +8,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-import pygal
 
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
@@ -179,26 +178,6 @@ def run_all_experiments(latches, name, *args, **kwargs):
     g.set(xscale='log')
     g.set_xticks(threads, labels=threads)
     plt.savefig(f'{name}-logscale.pdf', format='pdf', bbox_inches='tight')
-
-    fig = pygal.Line()
-    fig.title = f'{name}'
-    fig.x_labels = [None] + threads
-
-    for latch, label in zip(latches, labels):
-        data = [None]
-        for thread in threads:
-            mean = df_digest['mean'][latch][thread]
-            min = df_digest['min'][latch][thread]
-            max = df_digest['max'][latch][thread]
-            if df_digest['relative_stddev'][latch][thread] < 1.0:
-                # Ignore error bar if too small
-                data.append({'value': mean})
-            else:
-                data.append({'value': mean, 'ci': {'low': min, 'high': max}})
-
-        fig.add(label, data)
-
-    fig.render_to_file(f'{name}.svg')
 
 rw_latches = ['optlock_st', 'omcs_offset', 'omcs_offset_op_read_numa_qnode']
 wo_latches = ['tatas_st', 'mcs']
