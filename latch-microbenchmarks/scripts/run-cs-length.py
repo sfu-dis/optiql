@@ -13,8 +13,11 @@ import pygal
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
-NUM_CORES = 20
-NUM_SOCKETS = 2
+import sys
+base_repo_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(base_repo_dir)
+from common.numa import NUM_SOCKETS, NUM_CORES
 
 def relative_stddev(x):
     return np.std(x, ddof=1) / np.mean(x) * 100
@@ -221,4 +224,3 @@ if __name__ == '__main__':
         for cs_cycles in cs_cycles_list:
             latches = rw_latches
             run_all_experiments(latches, 'Latch-Low-1M-R{}-W{}-CS{}'.format(r, w, cs_cycles), array_size=1048576, seconds=SECONDS, ver_read_pct=r, acq_rel_pct=w, dist='uniform', cs_cycles=cs_cycles, ps_cycles=0)
-

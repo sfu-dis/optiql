@@ -13,9 +13,11 @@ import pygal
 pd.options.display.max_columns = None
 pd.options.display.max_rows = None
 
-NUM_CORES = 20
-NUM_SOCKETS = 2
-
+import sys
+base_repo_dir = os.path.dirname(os.path.dirname(
+    os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(base_repo_dir)
+from common.numa import NUM_SOCKETS, NUM_CORES
 
 def relative_stddev(x):
     return np.std(x, ddof=1) / np.mean(x) * 100
