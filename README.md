@@ -1,4 +1,4 @@
-## OptiQL - Optimistic Queuing Lock
+## OptiQL: Optimistic Queuing Lock
 
 OptiQL is an optimistic lock that offers both high read performance and robustness under contention by extending the classic queue-based MCS locks with optimistic reads.  
 
