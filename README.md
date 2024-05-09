@@ -10,6 +10,8 @@ Ge Shi, Ziyi Yan and Tianzheng Wang.
 Proceedings of the ACM on Management of Data, Vol 1, No. 3 (SIGMOD 2024)
 ```
 
+See you in [Santiago](https://2024.sigmod.org/)!
+
 ### Included in this repository:
 This repository implements OptiQL and several other baseline locks, along with index use cases (B+-tree and ART) that use OptiQL in optimistic lock coupling. See sub-directories for:
 * Index benchmarks:  under `index-benchmarks` directory 
